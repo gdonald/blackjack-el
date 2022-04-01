@@ -19,14 +19,20 @@
     (get-buffer-create buffer-name)
     (switch-to-buffer buffer-name)
     (with-current-buffer buffer-name
-      (defvar bj-game '((shoe . nil)
-                        (dealer-hand . '(cards nil))
-                        (player-hands . nil)
-                        (num-decks . 1)
-                        (money . 10000)
-                        (current-bet . 500)))
-      (bj-deal-hand bj-game)
-      (bj-draw bj-game))))
+      (let ((bj-game (bj-create-game)))
+        (bj-deal-hand bj-game)
+        (bj-draw bj-game)))))
+
+(defun bj-create-game ()
+  "Create initial game state."
+  (interactive)
+  '(
+    ;;(shoe . nil)
+    (dealer-hand . (cards . nil))
+    (player-hands . nil)
+    (num-decks . 1)
+    (money . 10000)
+    (current-bet . 500)))
 
 (defun bj-draw (game)
   "GAME top level draw function."
@@ -49,11 +55,15 @@
 
 (defun bj-shuffle (game)
   "GAME re-shuffle the shoe."
-  (let ((cards '()))
+  (let ((cards nil)
+        (x 0))
     (dotimes (suit 4)
       (dotimes (value 13)
-        (setf cards (cons cards '(value . suit)))))
-    (setcdr (assq 'shoe game) cards)))
+        (push `(,x . (,value . ,suit)) cards)
+        (setf x (1+ x))))
+    ;;(setf cards (bj-shuffle-cards cards))
+    (setf game (cons `(shoe . ,cards) game)))
+  game)
 
 (defun bj-deal-hand (game)
   "GAME deal a new hand."
@@ -68,6 +78,25 @@
 
 (defun bj-quit (game)
   "GAME quit.")
+
+(defun bj-shuffle-cards (cards)
+  "CARDS shuffle."
+  (dotimes (* 7 (number (length cards)))
+    (setf cards (bj-swap cards)))
+  cards)
+
+(defun bj-swap (cards)
+  "CARDS swap."
+  (let* ((rand (random (length cards)))
+         (item (assq rand cards))
+         (cards (delq (assq rand cards) cards))
+         (cards (cons item cards))))
+  cards)
+
+(defun bj-p (x)
+  "X prints x."
+  (move-end-of-line 0)
+  (insert (format "\n%s" x)))
 
 (provide 'bj)
 ;;; bj.el ends here
