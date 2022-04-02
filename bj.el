@@ -19,23 +19,67 @@
     (get-buffer-create buffer-name)
     (switch-to-buffer buffer-name)
     (with-current-buffer buffer-name
-      (let ((bj-game (bj-create-game)))
-        (bj-deal-hand bj-game)
-        (bj-draw bj-game)))))
+      (let ((game (bj-create-game)))
+        (setf game (bj-deal-hand game))
+        (bj-draw game)))))
 
 (defun bj-create-game ()
   "Create initial game state."
   (interactive)
-  '(
-    ;;(shoe . nil)
-    (dealer-hand . (cards . nil))
+  '((dealer-hand . (cards . nil))
     (player-hands . nil)
     (num-decks . 1)
     (money . 10000)
     (current-bet . 500)))
 
+(defun bj-deal-hand (game)
+  "Deal new GAME hands."
+  (if (bj-need-to-shuffle game)
+      (setf game (bj-shuffle game)))
+
+  ;; deal dealer hand
+
+  ;; deal player hand
+
+  game)
+
+(defun bj-need-to-shuffle (game)
+  "Are GAME cards nearly exhausted?"
+  t)
+
+(defun bj-shuffle (game)
+  "Create and add GAME cards to the show."
+  (let ((cards nil)
+        (x 0))
+    (dotimes (suit 4)
+      (dotimes (value 13)
+        (push `(,x . (,value . ,suit)) cards)
+        (setf x (1+ x))))
+    (setf cards (bj-shuffle-loop cards))
+    (setf game (cons `(shoe . ,cards) game)))
+  game)
+
+(defun bj-shuffle-loop (cards)
+  "Shuffle CARDS."
+  (dotimes (x (* 7 (length cards)))
+    (setf cards (bj-move-rand-card cards)))
+  cards)
+
+(defun bj-move-rand-card (cards)
+  "Move a random card to the top of the shoe CARDS."
+  (let ((rand (random (length cards)))
+        (card nil)
+        (new-cards nil))
+    (setf card (assq rand cards))
+    (setf new-cards (setf cards (delq (assq rand cards) cards)))
+    (setf new-cards (cons card cards))
+    new-cards))
+
+(defun bj-quit (game)
+  "GAME quit.")
+
 (defun bj-draw (game)
-  "GAME top level draw function."
+  "Draw GAME."
   ;; (erase-buffer)
   (insert "\n  Dealer:")
   (insert "\n\n  Player:\n\n")
@@ -49,65 +93,10 @@
     (define-key map [mouse-1] 'blackjack-quit)
     (insert (propertize "[Quit]" 'keymap map 'mouse-face 'highlight 'help-echo "Quit") "  ")))
 
-(defun bj-need-to-shuffle (game)
-  "GAME are we almost out of cards?"
-  t)
-
-(defun bj-shuffle (game)
-  "GAME re-shuffle the shoe."
-  (let ((cards nil)
-        (x 0))
-    (dotimes (suit 1)
-      (dotimes (value 5)
-        (push `(,x . (,value . ,suit)) cards)
-        (setf x (1+ x))))
-    ;;(setf cards (bj-shuffle-cards cards))
-    (setf game (cons `(shoe . ,cards) game)))
-  game)
-
-(defun bj-deal-hand (game)
-  "GAME deal a new hand."
-  ;; (if (bj-need-to-shuffle game)
-  ;;     (bj-shuffle game))
-  (bj-shuffle game)
-
-  (dolist (card (assq 'shoe game))
-    (insert card))
-
-  )
-
-(defun bj-quit (game)
-  "GAME quit.")
-
-(defun bj-shuffle-cards (cards)
-  "CARDS shuffle."
-  ;; (dotimes (x (* 7 (length cards)))
-  (dotimes (x (length cards))
-    (setf cards (bj-swap cards)))
-  cards)
-
-(defun bj-swap (cards)
-  "CARDS swap."
-  (let ((rand nil) (item nil) (swapped nil))
-    (bj-p "cards: " (length cards))
-
-    (setq rand (random (length cards)))
-
-    (if (not (eq 0 rand))
-        (setq item (assq rand cards)))
-
-    (if item
-        (progn
-          (setq swapped (delq (assq rand cards) cards))
-          (setq swapped (cons item cards)))
-      (setf swapped cards))
-
-    swapped))
-
-(defun bj-p (info x)
-  "INFO: X prints x."
+(defun bj-p (label x)
+  "LABEL is printed with X."
   (move-end-of-line 0)
-  (insert (format "\n%s%s" info x)))
+  (insert (format "\n%s%s" label x)))
 
 (provide 'bj)
 ;;; bj.el ends here
