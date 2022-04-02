@@ -57,8 +57,8 @@
   "GAME re-shuffle the shoe."
   (let ((cards nil)
         (x 0))
-    (dotimes (suit 4)
-      (dotimes (value 13)
+    (dotimes (suit 1)
+      (dotimes (value 5)
         (push `(,x . (,value . ,suit)) cards)
         (setf x (1+ x))))
     ;;(setf cards (bj-shuffle-cards cards))
@@ -81,22 +81,33 @@
 
 (defun bj-shuffle-cards (cards)
   "CARDS shuffle."
-  (dotimes (* 7 (number (length cards)))
+  ;; (dotimes (x (* 7 (length cards)))
+  (dotimes (x (length cards))
     (setf cards (bj-swap cards)))
   cards)
 
 (defun bj-swap (cards)
   "CARDS swap."
-  (let* ((rand (random (length cards)))
-         (item (assq rand cards))
-         (cards (delq (assq rand cards) cards))
-         (cards (cons item cards))))
-  cards)
+  (let ((rand nil) (item nil) (swapped nil))
+    (bj-p "cards: " (length cards))
 
-(defun bj-p (x)
-  "X prints x."
+    (setq rand (random (length cards)))
+
+    (if (not (eq 0 rand))
+        (setq item (assq rand cards)))
+
+    (if item
+        (progn
+          (setq swapped (delq (assq rand cards) cards))
+          (setq swapped (cons item cards)))
+      (setf swapped cards))
+
+    swapped))
+
+(defun bj-p (info x)
+  "INFO: X prints x."
   (move-end-of-line 0)
-  (insert (format "\n%s" x)))
+  (insert (format "\n%s%s" info x)))
 
 (provide 'bj)
 ;;; bj.el ends here
