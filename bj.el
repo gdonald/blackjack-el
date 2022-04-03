@@ -20,27 +20,40 @@
     (switch-to-buffer buffer-name)
     (with-current-buffer buffer-name
       (let ((game (bj-create-game)))
-        (setf game (bj-deal-hand game))
+        (setf game (bj-deal-hands game))
         (bj-draw game)))))
 
 (defun bj-create-game ()
   "Create initial game state."
-  (interactive)
-  '((dealer-hand . (cards . nil))
-    (player-hands . nil)
-    (num-decks . 1)
+  '((num-decks . 1)
     (money . 10000)
     (current-bet . 500)))
 
-(defun bj-deal-hand (game)
+(defun bj-deal-cards (game count)
+  "Deal COUNT cards from GAME."
+  (let ((cards nil) (card nil) (dealt nil))
+    (dotimes (x count)
+      (setf cards (cdr (assq 'shoe game)))
+      (setf card (car cards))
+      (push `(,x . ,(cdr card)) dealt)
+      (setf cards (delq (assq (car card) cards) cards))
+      (setf game (delq (assq 'shoe game) game))
+      (setf game (cons `(shoe . ,cards) game)))
+    `((game . ,game) (dealt . ,dealt))))
+
+(defun bj-deal-hands (game)
   "Deal new GAME hands."
   (if (bj-need-to-shuffle game)
       (setf game (bj-shuffle game)))
-
-  ;; deal dealer hand
-
-  ;; deal player hand
-
+  (let ((dealer-cards nil)
+        (player-cards nil)
+        (result nil))
+    (setf result (bj-deal-cards game 2))
+    (setf game (assq 'game result))
+    (setf game (cons `(player-hands . (0 . (cards . ,(cdr (assq 'dealt result))))) game))
+    (setf result (bj-deal-cards game 2))
+    (setf game (assq 'game result))
+    (setf game (cons `(dealer-hand . (cards . ,(cdr (assq 'dealt result)))) game)))
   game)
 
 (defun bj-need-to-shuffle (game)
@@ -49,10 +62,11 @@
 
 (defun bj-shuffle (game)
   "Create and add GAME cards to the show."
+  (setf game (delq (assq 'shoe game) game))
   (let ((cards nil)
         (x 0))
-    (dotimes (suit 4)
-      (dotimes (value 13)
+    (dotimes (suit 1)
+      (dotimes (value 5)
         (push `(,x . (,value . ,suit)) cards)
         (setf x (1+ x))))
     (setf cards (bj-shuffle-loop cards))
