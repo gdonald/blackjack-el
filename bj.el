@@ -78,7 +78,7 @@
       t)))
 
 (defun bj-shuffle (game)
-  "Create and add GAME cards to the show."
+  "Create and add GAME cards to the shoe."
   (setf game (delq (assq 'shoe game) game))
   (let ((cards nil)
         (x 0))
@@ -103,7 +103,7 @@
         (card nil)
         (new-cards nil))
     (setf card (assq rand cards))
-    (setf new-cards (setf cards (delq (assq rand cards) cards)))
+    (setf cards (delq (assq rand cards) cards))
     (setf new-cards (cons card cards))
     new-cards))
 
