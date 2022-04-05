@@ -73,7 +73,7 @@
         (result nil))
     (setf result (bj-deal-cards game 2))
     (setf game (cdr (assq 'game result)))
-    (setf game (cons `(player-hands . (0 . (cards . ,(cdr (assq 'dealt result))))) game))
+    (setf game (cons `(player-hands . ((0 . (cards . ,(cdr (assq 'dealt result)))))) game))
     (setf result (bj-deal-cards game 2))
     (setf game (cdr (assq 'game result)))
     (setf game (cons `(dealer-hand . (cards . ,(cdr (assq 'dealt result)))) game)))
@@ -130,7 +130,8 @@
   (insert "\n  Dealer:\n")
   (bj-draw-dealer-hand game)
   (insert "\n\n  Player:\n\n")
-  (insert "  ")
+  (bj-draw-player-hands game)
+  (insert "\n\n  ")
 
   (let ((map (make-sparse-keymap)))
     (define-key map [mouse-1] 'blackjack-deal-hand)
@@ -163,6 +164,38 @@
       (setf total (+ total (bj-card-value card count-method total))))
     (if (and (eq count-method 'soft) (> total 21))
         (setf total (bj-dealer-hand-value cards 'hard)))
+      total))
+
+(defun bj-draw-player-hands (game)
+  "Draw players hands using GAME."
+  (let ((player-hand nil) (player-hands nil))
+    (setf player-hands (cdr (assq 'player-hands game)))
+    (dotimes (x (length player-hands))
+      (setf player-hand (cdr (assq x player-hands)))
+      (bj-draw-player-hand game player-hand))))
+
+(defun bj-draw-player-hand (game player-hand)
+  "Draw the PLAYER-HAND using GAME."
+  (let ((cards nil) (card nil) (suit nil) (value nil))
+    (setf cards (cdr player-hand))
+    (insert "  ")
+    (dotimes (x (length cards))
+      (setf card (cdr (assq x cards)))
+      (setf value (car card))
+      (setf suit (cdr card))
+      (insert (bj-card-face game value suit))
+      (insert " "))
+    (insert " ⇒  ")
+    (insert (number-to-string (bj-player-hand-value cards 'soft)))))
+
+(defun bj-player-hand-value (cards count-method)
+  "Calculates CARDS total value based on COUNT-METHOD."
+  (let ((total 0) (card nil))
+    (dotimes (x (length cards))
+      (setf card (cdr (assq x cards)))
+      (setf total (+ total (bj-card-value card count-method total))))
+    (if (and (eq count-method 'soft) (> total 21))
+        (setf total (bj-player-hand-value cards 'hard)))
       total))
 
 (defun bj-card-value (card count-method total)
