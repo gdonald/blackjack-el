@@ -73,10 +73,10 @@
         (result nil))
     (setf result (bj-deal-cards game 2))
     (setf game (cdr (assq 'game result)))
-    (setf game (cons `(player-hands . ((0 . (cards . ,(cdr (assq 'dealt result)))))) game))
+    (setf game (cons `(player-hands . ((0 . ((cards . ,(cdr (assq 'dealt result))))))) game))
     (setf result (bj-deal-cards game 2))
     (setf game (cdr (assq 'game result)))
-    (setf game (cons `(dealer-hand . (cards . ,(cdr (assq 'dealt result)))) game)))
+    (setf game (cons `(dealer-hand . ((cards . ,(cdr (assq 'dealt result))) (hide-down-card . t))) game)))
   game)
 
 (defun bj-need-to-shuffle (game)
@@ -143,14 +143,20 @@
 
 (defun bj-draw-dealer-hand (game)
   "Draw the GAME dealer hand."
-  (let ((dealer-hand nil) (cards nil) (card nil) (suit nil) (value nil))
+  (let ((dealer-hand nil) (hide-down-card . nil) (cards nil) (card nil) (suit nil) (value nil))
     (setf dealer-hand (assq 'dealer-hand game))
-    (setf cards (cdr (cdr dealer-hand)))
+    (setf hide-down-card (cdr (assq 'hide-down-card dealer-hand)))
+    (setf cards (cdr (assq 'cards dealer-hand)))
     (insert "  ")
     (dotimes (x (length cards))
       (setf card (cdr (assq x cards)))
-      (setf value (car card))
-      (setf suit (cdr card))
+      (if (and (eq x 1) hide-down-card)
+          (progn
+            (setf value 13)
+            (setf suit 0)
+        (progn
+          (setf value (car card))
+          (setf suit (cdr card)))))
       (insert (bj-card-face game value suit))
       (insert " "))
     (insert " ⇒  ")
