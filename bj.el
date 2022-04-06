@@ -153,21 +153,23 @@
       (if (and (eq x 1) hide-down-card)
           (progn
             (setf value 13)
-            (setf suit 0)
+            (setf suit 0))
         (progn
           (setf value (car card))
-          (setf suit (cdr card)))))
+          (setf suit (cdr card))))
       (insert (bj-card-face game value suit))
       (insert " "))
     (insert " ⇒  ")
-    (insert (number-to-string (bj-dealer-hand-value cards 'soft)))))
+    (insert (number-to-string (bj-dealer-hand-value cards 'soft hide-down-card)))))
 
-(defun bj-dealer-hand-value (cards count-method)
-  "Calculates CARDS total value based on COUNT-METHOD."
+(defun bj-dealer-hand-value (cards count-method hide-down-card)
+  "Calculates CARDS total value based on COUNT-METHOD and HIDE-DOWN-CARD."
   (let ((total 0) (card nil))
     (dotimes (x (length cards))
-      (setf card (cdr (assq x cards)))
-      (setf total (+ total (bj-card-value card count-method total))))
+      (if (not (and (eq x 1) hide-down-card))
+          (progn
+            (setf card (cdr (assq x cards)))
+            (setf total (+ total (bj-card-value card count-method total))))))
     (if (and (eq count-method 'soft) (> total 21))
         (setf total (bj-dealer-hand-value cards 'hard)))
       total))
@@ -183,7 +185,7 @@
 (defun bj-draw-player-hand (game player-hand)
   "Draw the PLAYER-HAND using GAME."
   (let ((cards nil) (card nil) (suit nil) (value nil))
-    (setf cards (cdr player-hand))
+    (setf cards (cdr (assq 'cards player-hand)))
     (insert "  ")
     (dotimes (x (length cards))
       (setf card (cdr (assq x cards)))
