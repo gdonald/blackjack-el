@@ -20,8 +20,7 @@
     (switch-to-buffer buffer-name)
     (with-current-buffer buffer-name
       (let ((game (bj-make-game)))
-        (setf game (bj-deal-hands game))
-        (bj-draw game)))))
+        (setf game (bj-deal-hands-and-redraw game))))))
 
 (defun bj-make-game ()
   "Create initial game state."
@@ -124,9 +123,15 @@
 (defun bj-quit (game)
   "GAME quit.")
 
+(defun bj-deal-hands-and-redraw (game)
+  "Deal new hands and redraw using GAME."
+  (setf game (bj-deal-hands game))
+  (bj-draw game)
+  game)
+
 (defun bj-draw (game)
   "Draw GAME."
-  ;; (erase-buffer)
+  (erase-buffer)
   (insert "\n  Dealer:\n")
   (bj-draw-dealer-hand game)
   (insert "\n\n  Player:\n\n")
@@ -134,11 +139,11 @@
   (insert "\n\n  ")
 
   (let ((map (make-sparse-keymap)))
-    (define-key map [mouse-1] 'blackjack-deal-hand)
+    (define-key map [mouse-1] 'bj-deal-hands-and-redraw)
     (insert (propertize "[Deal Hand]" 'keymap map 'mouse-face 'highlight 'help-echo "Deal Hand") "  "))
 
   (let ((map (make-sparse-keymap)))
-    (define-key map [mouse-1] 'blackjack-quit)
+    (define-key map [mouse-1] 'bj-quit)
     (insert (propertize "[Quit]" 'keymap map 'mouse-face 'highlight 'help-echo "Quit") "  ")))
 
 (defun bj-draw-dealer-hand (game)
