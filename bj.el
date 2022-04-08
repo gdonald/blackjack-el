@@ -12,6 +12,9 @@
 ;;; This package lets you play Blackjack in Emacs.
 
 ;;; Code:
+
+(defvar bj-game (bj-make-game))
+
 (defun bj ()
   "The game of Blackjack."
   (interactive)
@@ -19,8 +22,7 @@
     (get-buffer-create buffer-name)
     (switch-to-buffer buffer-name)
     (with-current-buffer buffer-name
-      (let ((game (bj-make-game)))
-        (setf game (bj-deal-hands-and-redraw game))))))
+      (bj-deal-hands-and-redraw))))
 
 (defun bj-make-game ()
   "Create initial game state."
@@ -51,58 +53,54 @@
                       (2 . 81)
                       (1 . 80)))))
 
-(defun bj-deal-cards (game count)
-  "Deal COUNT cards from GAME."
+(defun bj-deal-cards (count)
+  "Deal COUNT cards."
   (let ((cards nil) (card nil) (dealt nil))
     (dotimes (x count)
-      (setf cards (cdr (assq 'shoe game)))
+      (setf cards (cdr (assq 'shoe bj-game)))
       (setf card (car cards))
       (push `(,x . ,(cdr card)) dealt)
       (setf cards (delq (assq (car card) cards) cards))
-      (setf game (delq (assq 'shoe game) game))
-      (setf game (cons `(shoe . ,cards) game)))
-    `((game . ,game) (dealt . ,dealt))))
+      (setf bj-game (delq (assq 'shoe bj-game) bj-game))
+      (setf bj-game (cons `(shoe . ,cards) bj-game)))
+    `((bj-game . ,bj-game) (dealt . ,dealt))))
 
-(defun bj-deal-hands (game)
-  "Deal new GAME hands."
-  (if (bj-need-to-shuffle game)
-      (setf game (bj-shuffle game)))
-  (let ((dealer-cards nil)
-        (player-cards nil)
-        (result nil))
-    (setf result (bj-deal-cards game 2))
-    (setf game (cdr (assq 'game result)))
-    (setf game (cons `(player-hands . ((0 . ((cards . ,(cdr (assq 'dealt result))))))) game))
-    (setf result (bj-deal-cards game 2))
-    (setf game (cdr (assq 'game result)))
-    (setf game (cons `(dealer-hand . ((cards . ,(cdr (assq 'dealt result))) (hide-down-card . t))) game)))
-  game)
+(defun bj-deal-hands ()
+  "Deal new hands."
+  (if (bj-need-to-shuffle)
+      (bj-shuffle))
+  (let ((dealer-cards nil) (player-cards nil) (result nil))
+    (setf result (bj-deal-cards 2))
+    (setf bj-game (cdr (assq 'bj-game result)))
+    (setf bj-game (cons `(player-hands . ((0 . ((cards . ,(cdr (assq 'dealt result))))))) bj-game))
+    (setf result (bj-deal-cards 2))
+    (setf bj-game (cdr (assq 'bj-game result)))
+    (setf bj-game (cons `(dealer-hand . ((cards . ,(cdr (assq 'dealt result))) (hide-down-card . t))) bj-game))))
 
-(defun bj-need-to-shuffle (game)
-  "Are GAME cards nearly exhausted?"
+(defun bj-need-to-shuffle ()
+  "Are shoe cards nearly exhausted?"
   (let ((cards nil) (used nil) (spec nil) (decks nil))
-    (setq cards (length (cdr (assq 'shoe game))))
+    (setq cards (length (cdr (assq 'shoe bj-game))))
     (if (> cards 0)
         (progn
-          (setq decks (cdr (assq 'num-decks game)))
-          (setq used (- (* decks (cdr (assq 'cards-per-deck game))) cards))
-          (setq spec (cdr (assq decks (assq 'shuffle-specs game))))
+          (setq decks (cdr (assq 'num-decks bj-game)))
+          (setq used (- (* decks (cdr (assq 'cards-per-deck bj-game))) cards))
+          (setq spec (cdr (assq decks (assq 'shuffle-specs bj-game))))
           (> (* 100 (/ (float used) cards)) spec))
       t)))
 
-(defun bj-shuffle (game)
-  "Create and add GAME cards to the shoe."
-  (setf game (delq (assq 'shoe game) game))
+(defun bj-shuffle ()
+  "Create and add cards to the shoe."
+  (setf bj-game (delq (assq 'shoe bj-game) bj-game))
   (let ((cards nil)
         (x 0))
-    (dotimes (n (cdr (assq 'num-decks game)))
+    (dotimes (n (cdr (assq 'num-decks bj-game)))
       (dotimes (suit 4)
         (dotimes (value 13)
           (push `(,x . (,value . ,suit)) cards)
           (setf x (1+ x)))))
     (setf cards (bj-shuffle-loop cards))
-    (setf game (cons `(shoe . ,cards) game)))
-  game)
+    (setf bj-game (cons `(shoe . ,cards) bj-game))))
 
 (defun bj-shuffle-loop (cards)
   "Shuffle CARDS."
@@ -120,22 +118,22 @@
     (setf new-cards (cons card cards))
     new-cards))
 
-(defun bj-quit (game)
-  "GAME quit.")
+(defun bj-quit ()
+  "Quit.")
 
-(defun bj-deal-hands-and-redraw (game)
-  "Deal new hands and redraw using GAME."
-  (setf game (bj-deal-hands game))
-  (bj-draw game)
-  game)
+(defun bj-deal-hands-and-redraw ()
+  "Deal new hands and redraw."
+  (interactive)
+  (bj-deal-hands)
+  (bj-draw))
 
-(defun bj-draw (game)
-  "Draw GAME."
+(defun bj-draw ()
+  "Top-level draw."
   (erase-buffer)
   (insert "\n  Dealer:\n")
-  (bj-draw-dealer-hand game)
+  (bj-draw-dealer-hand)
   (insert "\n\n  Player:\n\n")
-  (bj-draw-player-hands game)
+  (bj-draw-player-hands)
   (insert "\n\n  ")
 
   (let ((map (make-sparse-keymap)))
@@ -146,10 +144,10 @@
     (define-key map [mouse-1] 'bj-quit)
     (insert (propertize "[Quit]" 'keymap map 'mouse-face 'highlight 'help-echo "Quit") "  ")))
 
-(defun bj-draw-dealer-hand (game)
-  "Draw the GAME dealer hand."
+(defun bj-draw-dealer-hand ()
+  "Draw the dealer hand."
   (let ((dealer-hand nil) (hide-down-card . nil) (cards nil) (card nil) (suit nil) (value nil))
-    (setf dealer-hand (assq 'dealer-hand game))
+    (setf dealer-hand (assq 'dealer-hand bj-game))
     (setf hide-down-card (cdr (assq 'hide-down-card dealer-hand)))
     (setf cards (cdr (assq 'cards dealer-hand)))
     (insert "  ")
@@ -162,7 +160,7 @@
         (progn
           (setf value (car card))
           (setf suit (cdr card))))
-      (insert (bj-card-face game value suit))
+      (insert (bj-card-face value suit))
       (insert " "))
     (insert " ⇒  ")
     (insert (number-to-string (bj-dealer-hand-value cards 'soft hide-down-card)))))
@@ -177,18 +175,18 @@
             (setf total (+ total (bj-card-value card count-method total))))))
     (if (and (eq count-method 'soft) (> total 21))
         (setf total (bj-dealer-hand-value cards 'hard)))
-      total))
+    total))
 
-(defun bj-draw-player-hands (game)
-  "Draw players hands using GAME."
+(defun bj-draw-player-hands ()
+  "Draw players hands."
   (let ((player-hand nil) (player-hands nil))
-    (setf player-hands (cdr (assq 'player-hands game)))
+    (setf player-hands (cdr (assq 'player-hands bj-game)))
     (dotimes (x (length player-hands))
       (setf player-hand (cdr (assq x player-hands)))
-      (bj-draw-player-hand game player-hand))))
+      (bj-draw-player-hand player-hand))))
 
-(defun bj-draw-player-hand (game player-hand)
-  "Draw the PLAYER-HAND using GAME."
+(defun bj-draw-player-hand (player-hand)
+  "Draw the PLAYER-HAND."
   (let ((cards nil) (card nil) (suit nil) (value nil))
     (setf cards (cdr (assq 'cards player-hand)))
     (insert "  ")
@@ -196,7 +194,7 @@
       (setf card (cdr (assq x cards)))
       (setf value (car card))
       (setf suit (cdr card))
-      (insert (bj-card-face game value suit))
+      (insert (bj-card-face value suit))
       (insert " "))
     (insert " ⇒  ")
     (insert (number-to-string (bj-player-hand-value cards 'soft)))))
@@ -209,7 +207,7 @@
       (setf total (+ total (bj-card-value card count-method total))))
     (if (and (eq count-method 'soft) (> total 21))
         (setf total (bj-player-hand-value cards 'hard)))
-      total))
+    total))
 
 (defun bj-card-value (card count-method total)
   "Calculates CARD value based on COUNT-METHOD and running hand TOTAL."
@@ -221,10 +219,10 @@
         (setf value 11))
     value))
 
-(defun bj-card-face (game value suit)
-  "Return card face from GAME based on VALUE and SUIT."
+(defun bj-card-face (value suit)
+  "Return card face based on VALUE and SUIT."
   (let ((faces nil) (face nil))
-    (setf faces (cdr (assq 'faces game)))
+    (setf faces (cdr (assq 'faces bj-game)))
     (setf faces (cdr (assq value faces)))
     (setf face (cdr (assq suit faces)))
     face))
