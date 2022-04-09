@@ -22,7 +22,7 @@
     (get-buffer-create buffer-name)
     (switch-to-buffer buffer-name)
     (with-current-buffer buffer-name
-      (bj-deal-hands-and-redraw))))
+      (bj-deal-hands))))
 
 (defun bj-make-game ()
   "Create initial game state."
@@ -67,6 +67,7 @@
 
 (defun bj-deal-hands ()
   "Deal new hands."
+  (interactive)
   (if (bj-need-to-shuffle)
       (bj-shuffle))
   (let ((dealer-cards nil) (player-cards nil) (result nil))
@@ -75,7 +76,8 @@
     (setf bj-game (cons `(player-hands . ((0 . ((cards . ,(cdr (assq 'dealt result))))))) bj-game))
     (setf result (bj-deal-cards 2))
     (setf bj-game (cdr (assq 'bj-game result)))
-    (setf bj-game (cons `(dealer-hand . ((cards . ,(cdr (assq 'dealt result))) (hide-down-card . t))) bj-game))))
+    (setf bj-game (cons `(dealer-hand . ((cards . ,(cdr (assq 'dealt result))) (hide-down-card . t))) bj-game)))
+  (bj-draw-hands))
 
 (defun bj-need-to-shuffle ()
   "Are shoe cards nearly exhausted?"
@@ -121,24 +123,79 @@
 (defun bj-quit ()
   "Quit.")
 
-(defun bj-deal-hands-and-redraw ()
-  "Deal new hands and redraw."
-  (interactive)
-  (bj-deal-hands)
-  (bj-draw))
-
-(defun bj-draw ()
+(defun bj-draw-hands ()
   "Top-level draw."
   (erase-buffer)
   (insert "\n  Dealer:\n")
   (bj-draw-dealer-hand)
   (insert "\n\n  Player:\n\n")
   (bj-draw-player-hands)
-  (insert "\n\n  ")
+  (insert "\n\n  "))
+
+(defun bj-hit ()
+  "Deal a new card to the current player hand."
+  (interactive))
+
+(defun bj-stand ()
+  "End the current player hand."
+  (interactive))
+
+(defun bj-split ()
+  "Split the current player hand."
+  (interactive))
+
+(defun bj-dbl ()
+  "Double the current player hand."
+  (interactive))
+
+(defun bj-can-hit ()
+  "Return non-nil if the current player hand can hit."
+  t)
+
+(defun bj-can-stand ()
+  "Return non-nil if the current player hand can stand."
+  t)
+
+(defun bj-can-split ()
+  "Return non-nil if the current player hand can split."
+  t)
+
+(defun bj-can-dbl ()
+  "Return non-nil if the current player hand can double."
+  t)
+
+(defun bj-draw-player-hand-actions ()
+  "Draw player hand actions."
+  (if (bj-can-hit)
+      (let ((map (make-sparse-keymap)))
+        (define-key map [mouse-1] 'bj-hit)
+        (insert (propertize "[Hit]" 'keymap map 'mouse-face 'highlight 'help-echo "Hit") "  ")))
+  (if (bj-can-stand)
+      (let ((map (make-sparse-keymap)))
+        (define-key map [mouse-1] 'bj-stand)
+        (insert (propertize "[Stand]" 'keymap map 'mouse-face 'highlight 'help-echo "Stand") "  ")))
+  (if (bj-can-split)
+      (let ((map (make-sparse-keymap)))
+        (define-key map [mouse-1] 'bj-split)
+        (insert (propertize "[Split]" 'keymap map 'mouse-face 'highlight 'help-echo "Split") "  ")))
+  (if (bj-can-dbl)
+      (let ((map (make-sparse-keymap)))
+        (define-key map [mouse-1] 'bj-dbl)
+        (insert (propertize "[Double]" 'keymap map 'mouse-face 'highlight 'help-echo "Double") "  "))))
+
+(defun bj-draw-bet-options()
+  "Draw bet options."
+  (let ((map (make-sparse-keymap)))
+    (define-key map [mouse-1] 'bj-deal-hands)
+    (insert (propertize "[Deal Hand]" 'keymap map 'mouse-face 'highlight 'help-echo "Deal Hand") "  "))
 
   (let ((map (make-sparse-keymap)))
-    (define-key map [mouse-1] 'bj-deal-hands-and-redraw)
-    (insert (propertize "[Deal Hand]" 'keymap map 'mouse-face 'highlight 'help-echo "Deal Hand") "  "))
+    (define-key map [mouse-1] 'bj-new-bet)
+    (insert (propertize "[Change Bet]" 'keymap map 'mouse-face 'highlight 'help-echo "Change Bet") "  "))
+
+  (let ((map (make-sparse-keymap)))
+    (define-key map [mouse-1] 'bj-game-otions)
+    (insert (propertize "[Options]" 'keymap map 'mouse-face 'highlight 'help-echo "Options") "  "))
 
   (let ((map (make-sparse-keymap)))
     (define-key map [mouse-1] 'bj-quit)
