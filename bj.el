@@ -13,8 +13,6 @@
 
 ;;; Code:
 
-(defvar bj-game (bj-make-game))
-
 (defun bj ()
   "The game of Blackjack."
   (interactive)
@@ -52,6 +50,8 @@
                       (3 . 82)
                       (2 . 81)
                       (1 . 80)))))
+
+(defvar bj-game (bj-make-game))
 
 (defun bj-deal-cards (count)
   "Deal COUNT cards."
@@ -163,6 +163,15 @@
 (defun bj-can-dbl ()
   "Return non-nil if the current player hand can double."
   t)
+
+(defun bj-all-bets ()
+  "Sum of all player hand bets."
+  (let ((total 0) (player-hands nil) (player-hand))
+    (setf player-hands (cdr (assq 'player-hands bj-game)))
+    (dotimes (x (length player-hands))
+      (setf player-hand (cdr (assq x player-hands)))
+      ;; TODO
+      )))
 
 (defun bj-draw-player-hand-actions ()
   "Draw player hand actions."
