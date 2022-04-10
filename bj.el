@@ -20,7 +20,8 @@
     (get-buffer-create buffer-name)
     (switch-to-buffer buffer-name)
     (with-current-buffer buffer-name
-      (bj-deal-hands))))
+      (let ((game (bj-make-game)))
+        (setf game (bj-deal-hands game))))))
 
 (defun bj-make-game ()
   "Create initial game state."
@@ -28,20 +29,20 @@
     (num-decks . 1)
     (money . 10000)
     (current-bet . 500)
-    (faces . ((0 . ((0 . "🂡") (1 . "🂱") (2 . "🃁") (3 . "🃑")))
-              (1 . ((0 . "🂢") (1 . "🂲") (2 . "🃂") (3 . "🃒")))
-              (2 . ((0 . "🂣") (1 . "🂳") (2 . "🃃") (3 . "🃓")))
-              (3 . ((0 . "🂤") (1 . "🂴") (2 . "🃄") (3 . "🃔")))
-              (4 . ((0 . "🂥") (1 . "🂵") (2 . "🃅") (3 . "🃕")))
-              (5 . ((0 . "🂦") (1 . "🂶") (2 . "🃆") (3 . "🃖")))
-              (6 . ((0 . "🂧") (1 . "🂷") (2 . "🃇") (3 . "🃗")))
-              (7 . ((0 . "🂨") (1 . "🂸") (2 . "🃈") (3 . "🃘")))
-              (8 . ((0 . "🂩") (1 . "🂹") (2 . "🃉") (3 . "🃙")))
-              (9 . ((0 . "🂪") (1 . "🂺") (2 . "🃊") (3 . "🃚")))
-              (10 . ((0 . "🂫") (1 . "🂻") (2 . "🃋") (3 . "🃛")))
-              (11 . ((0 . "🂭") (1 . "🂽") (2 . "🃍") (3 . "🃝")))
-              (12 . ((0 . "🂮") (1 . "🂾") (2 . "🃎") (3 . "🃞")))
-              (13 . ((0 . "🂠")))))
+    (faces . ((0 . ((0 . "A♠") (1 . "A♥") (2 . "A♣") (3 . "A♦")))
+              (1 . ((0 . "2♠") (1 . "2♥") (2 . "2♣") (3 . "2♦")))
+              (2 . ((0 . "3♠") (1 . "3♥") (2 . "3♣") (3 . "3♦")))
+              (3 . ((0 . "4♠") (1 . "4♥") (2 . "4♣") (3 . "4♦")))
+              (4 . ((0 . "5♠") (1 . "5♥") (2 . "5♣") (3 . "5♦")))
+              (5 . ((0 . "6♠") (1 . "6♥") (2 . "6♣") (3 . "6♦")))
+              (6 . ((0 . "7♠") (1 . "7♥") (2 . "7♣") (3 . "7♦")))
+              (7 . ((0 . "8♠") (1 . "8♥") (2 . "8♣") (3 . "8♦")))
+              (8 . ((0 . "9♠") (1 . "9♥") (2 . "9♣") (3 . "9♦")))
+              (9 . ((0 . "T♠") (1 . "T♥") (2 . "T♣") (3 . "T♦")))
+              (10 . ((0 . "J♠") (1 . "J♥") (2 . "J♣") (3 . "J♦")))
+              (11 . ((0 . "Q♠") (1 . "Q♥") (2 . "Q♣") (3 . "Q♦")))
+              (12 . ((0 . "K♠") (1 . "K♥") (2 . "K♣") (3 . "K♦")))
+              (13 . ((0 . "??")))))
     (shuffle-specs . ((8 . 95)
                       (7 . 92)
                       (6 . 89)
@@ -51,58 +52,58 @@
                       (2 . 81)
                       (1 . 80)))))
 
-(defvar bj-game (bj-make-game))
-
-(defun bj-deal-cards (count)
-  "Deal COUNT cards."
+(defun bj-deal-cards (game count)
+  "Deal COUNT cards using GAME."
   (let ((cards nil) (card nil) (dealt nil))
     (dotimes (x count)
-      (setf cards (cdr (assq 'shoe bj-game)))
+      (setf cards (cdr (assq 'shoe game)))
       (setf card (car cards))
       (push `(,x . ,(cdr card)) dealt)
       (setf cards (delq (assq (car card) cards) cards))
-      (setf bj-game (delq (assq 'shoe bj-game) bj-game))
-      (setf bj-game (cons `(shoe . ,cards) bj-game)))
-    `((bj-game . ,bj-game) (dealt . ,dealt))))
+      (setf game (delq (assq 'shoe game) game))
+      (setf game (cons `(shoe . ,cards) game)))
+    `((game . ,game) (dealt . ,dealt))))
 
-(defun bj-deal-hands ()
-  "Deal new hands."
+(defun bj-deal-hands (game)
+  "Deal new hands from GAME."
   (interactive)
-  (if (bj-need-to-shuffle)
-      (bj-shuffle))
+  (bj-p "game: " game)
+  (if (bj-need-to-shuffle game)
+      (setf game (bj-shuffle game)))
   (let ((dealer-cards nil) (player-cards nil) (result nil))
-    (setf result (bj-deal-cards 2))
-    (setf bj-game (cdr (assq 'bj-game result)))
-    (setf bj-game (cons `(player-hands . ((0 . ((cards . ,(cdr (assq 'dealt result))))))) bj-game))
-    (setf result (bj-deal-cards 2))
-    (setf bj-game (cdr (assq 'bj-game result)))
-    (setf bj-game (cons `(dealer-hand . ((cards . ,(cdr (assq 'dealt result))) (hide-down-card . t))) bj-game)))
-  (bj-draw-hands))
+    (setf result (bj-deal-cards game 2))
+    (setf game (cdr (assq 'game result)))
+    (setf game (cons `(player-hands . ((0 . ((cards . ,(cdr (assq 'dealt result))))))) game))
+    (setf result (bj-deal-cards game 2))
+    (setf game (cdr (assq 'game result)))
+    (setf game (cons `(dealer-hand . ((cards . ,(cdr (assq 'dealt result))) (hide-down-card . t))) game)))
+  (bj-draw-hands game)
+  (bj-draw-bet-options game))
 
-(defun bj-need-to-shuffle ()
-  "Are shoe cards nearly exhausted?"
+(defun bj-need-to-shuffle (game)
+  "Are GAME shoe cards nearly exhausted?"
   (let ((cards nil) (used nil) (spec nil) (decks nil))
-    (setq cards (length (cdr (assq 'shoe bj-game))))
+    (setq cards (length (cdr (assq 'shoe game))))
     (if (> cards 0)
         (progn
-          (setq decks (cdr (assq 'num-decks bj-game)))
-          (setq used (- (* decks (cdr (assq 'cards-per-deck bj-game))) cards))
-          (setq spec (cdr (assq decks (assq 'shuffle-specs bj-game))))
+          (setq decks (cdr (assq 'num-decks game)))
+          (setq used (- (* decks (cdr (assq 'cards-per-deck game))) cards))
+          (setq spec (cdr (assq decks (assq 'shuffle-specs game))))
           (> (* 100 (/ (float used) cards)) spec))
       t)))
 
-(defun bj-shuffle ()
-  "Create and add cards to the shoe."
-  (setf bj-game (delq (assq 'shoe bj-game) bj-game))
+(defun bj-shuffle (game)
+  "Create and add cards to the GAME shoe."
+  (setf game (delq (assq 'shoe game) game))
   (let ((cards nil)
         (x 0))
-    (dotimes (n (cdr (assq 'num-decks bj-game)))
+    (dotimes (n (cdr (assq 'num-decks game)))
       (dotimes (suit 4)
         (dotimes (value 13)
           (push `(,x . (,value . ,suit)) cards)
           (setf x (1+ x)))))
     (setf cards (bj-shuffle-loop cards))
-    (setf bj-game (cons `(shoe . ,cards) bj-game))))
+    (setf game (cons `(shoe . ,cards) game))))
 
 (defun bj-shuffle-loop (cards)
   "Shuffle CARDS."
@@ -120,100 +121,100 @@
     (setf new-cards (cons card cards))
     new-cards))
 
-(defun bj-quit ()
-  "Quit.")
+(defun bj-quit (game)
+  "Quit using GAME.")
 
-(defun bj-draw-hands ()
-  "Top-level draw."
+(defun bj-draw-hands (game)
+  "Top-level draw using GAME."
   (erase-buffer)
   (insert "\n  Dealer:\n")
-  (bj-draw-dealer-hand)
+  (bj-draw-dealer-hand game)
   (insert "\n\n  Player:\n\n")
-  (bj-draw-player-hands)
+  (bj-draw-player-hands game)
   (insert "\n\n  "))
 
-(defun bj-hit ()
-  "Deal a new card to the current player hand."
+(defun bj-hit (game)
+  "Deal a new card to the current GAME player hand."
   (interactive))
 
-(defun bj-stand ()
-  "End the current player hand."
+(defun bj-stand (game)
+  "End the current GAME player hand."
   (interactive))
 
-(defun bj-split ()
-  "Split the current player hand."
+(defun bj-split (game)
+  "Split the current GAME player hand."
   (interactive))
 
-(defun bj-dbl ()
-  "Double the current player hand."
+(defun bj-dbl (game)
+  "Double the current GAME player hand."
   (interactive))
 
-(defun bj-can-hit ()
-  "Return non-nil if the current player hand can hit."
+(defun bj-can-hit (game)
+  "Return non-nil if the current GAME player hand can hit."
   t)
 
-(defun bj-can-stand ()
-  "Return non-nil if the current player hand can stand."
+(defun bj-can-stand (game)
+  "Return non-nil if the current GAME player hand can stand."
   t)
 
-(defun bj-can-split ()
-  "Return non-nil if the current player hand can split."
+(defun bj-can-split (game)
+  "Return non-nil if the current GAME player hand can split."
   t)
 
-(defun bj-can-dbl ()
-  "Return non-nil if the current player hand can double."
+(defun bj-can-dbl (game)
+  "Return non-nil if the current GAME player hand can double."
   t)
 
-(defun bj-all-bets ()
-  "Sum of all player hand bets."
+(defun bj-all-bets (game)
+  "Sum of all GAME player hand bets."
   (let ((total 0) (player-hands nil) (player-hand))
-    (setf player-hands (cdr (assq 'player-hands bj-game)))
+    (setf player-hands (cdr (assq 'player-hands game)))
     (dotimes (x (length player-hands))
       (setf player-hand (cdr (assq x player-hands)))
       ;; TODO
       )))
 
-(defun bj-draw-player-hand-actions ()
-  "Draw player hand actions."
-  (if (bj-can-hit)
+(defun bj-draw-player-hand-actions (game)
+  "Draw GAME player hand actions."
+  (if (bj-can-hit game)
       (let ((map (make-sparse-keymap)))
-        (define-key map [mouse-1] 'bj-hit)
+        (define-key map [mouse-1] `(bj-hit ,game))
         (insert (propertize "[Hit]" 'keymap map 'mouse-face 'highlight 'help-echo "Hit") "  ")))
-  (if (bj-can-stand)
+  (if (bj-can-stand game)
       (let ((map (make-sparse-keymap)))
-        (define-key map [mouse-1] 'bj-stand)
+        (define-key map [mouse-1] `(bj-stand ,game))
         (insert (propertize "[Stand]" 'keymap map 'mouse-face 'highlight 'help-echo "Stand") "  ")))
-  (if (bj-can-split)
+  (if (bj-can-split game)
       (let ((map (make-sparse-keymap)))
-        (define-key map [mouse-1] 'bj-split)
+        (define-key map [mouse-1] `(bj-split ,game))
         (insert (propertize "[Split]" 'keymap map 'mouse-face 'highlight 'help-echo "Split") "  ")))
-  (if (bj-can-dbl)
+  (if (bj-can-dbl game)
       (let ((map (make-sparse-keymap)))
-        (define-key map [mouse-1] 'bj-dbl)
+        (define-key map [mouse-1] `(bj-dbl ,game))
         (insert (propertize "[Double]" 'keymap map 'mouse-face 'highlight 'help-echo "Double") "  "))))
 
-(defun bj-draw-bet-options()
-  "Draw bet options."
+(defun bj-draw-bet-options (game)
+  "Draw GAME bet options."
   (let ((map (make-sparse-keymap)))
-    (define-key map [mouse-1] 'bj-deal-hands)
+    (define-key map [mouse-1] `(bj-deal-hands ,game))
     (insert (propertize "[Deal Hand]" 'keymap map 'mouse-face 'highlight 'help-echo "Deal Hand") "  "))
 
   (let ((map (make-sparse-keymap)))
-    (define-key map [mouse-1] 'bj-new-bet)
+    (define-key map [mouse-1] `(bj-new-bet ,game))
     (insert (propertize "[Change Bet]" 'keymap map 'mouse-face 'highlight 'help-echo "Change Bet") "  "))
 
   (let ((map (make-sparse-keymap)))
-    (define-key map [mouse-1] 'bj-game-otions)
+    (define-key map [mouse-1] `(bj-game-otions ,game))
     (insert (propertize "[Options]" 'keymap map 'mouse-face 'highlight 'help-echo "Options") "  "))
 
   (let ((map (make-sparse-keymap)))
-    (define-key map [mouse-1] 'bj-quit)
+    (define-key map [mouse-1] `(bj-quit ,game))
     (insert (propertize "[Quit]" 'keymap map 'mouse-face 'highlight 'help-echo "Quit") "  ")))
 
-(defun bj-draw-dealer-hand ()
-  "Draw the dealer hand."
+(defun bj-draw-dealer-hand (game)
+  "Draw the GAME dealer hand."
   (let ((dealer-hand nil) (hide-down-card . nil) (cards nil) (card nil) (suit nil) (value nil))
-    (setf dealer-hand (assq 'dealer-hand bj-game))
+    (setf dealer-hand (assq 'dealer-hand game))
     (setf hide-down-card (cdr (assq 'hide-down-card dealer-hand)))
     (setf cards (cdr (assq 'cards dealer-hand)))
     (insert "  ")
@@ -226,7 +227,7 @@
         (progn
           (setf value (car card))
           (setf suit (cdr card))))
-      (insert (bj-card-face value suit))
+      (insert (bj-card-face game value suit))
       (insert " "))
     (insert " ⇒  ")
     (insert (number-to-string (bj-dealer-hand-value cards 'soft hide-down-card)))))
@@ -243,16 +244,16 @@
         (setf total (bj-dealer-hand-value cards 'hard)))
     total))
 
-(defun bj-draw-player-hands ()
-  "Draw players hands."
+(defun bj-draw-player-hands (game)
+  "Draw GAME players hands."
   (let ((player-hand nil) (player-hands nil))
-    (setf player-hands (cdr (assq 'player-hands bj-game)))
+    (setf player-hands (cdr (assq 'player-hands game)))
     (dotimes (x (length player-hands))
       (setf player-hand (cdr (assq x player-hands)))
-      (bj-draw-player-hand player-hand))))
+      (bj-draw-player-hand game player-hand))))
 
-(defun bj-draw-player-hand (player-hand)
-  "Draw the PLAYER-HAND."
+(defun bj-draw-player-hand (game player-hand)
+  "Draw the GAME PLAYER-HAND."
   (let ((cards nil) (card nil) (suit nil) (value nil))
     (setf cards (cdr (assq 'cards player-hand)))
     (insert "  ")
@@ -260,7 +261,7 @@
       (setf card (cdr (assq x cards)))
       (setf value (car card))
       (setf suit (cdr card))
-      (insert (bj-card-face value suit))
+      (insert (bj-card-face game value suit))
       (insert " "))
     (insert " ⇒  ")
     (insert (number-to-string (bj-player-hand-value cards 'soft)))))
@@ -285,10 +286,10 @@
         (setf value 11))
     value))
 
-(defun bj-card-face (value suit)
-  "Return card face based on VALUE and SUIT."
+(defun bj-card-face (game value suit)
+  "Return GAME card face based on VALUE and SUIT."
   (let ((faces nil) (face nil))
-    (setf faces (cdr (assq 'faces bj-game)))
+    (setf faces (cdr (assq 'faces game)))
     (setf faces (cdr (assq value faces)))
     (setf face (cdr (assq suit faces)))
     face))
