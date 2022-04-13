@@ -14,15 +14,14 @@
 ;;; Code:
 
 (defvar bj-shoe nil)
-
 (defvar bj-player-hands nil)
-
 (defvar bj-dealer-hand nil)
 (defvar bj-hide-down-card t)
 (defvar bj-cards-per-deck 52)
 (defvar bj-num-decks 1)
 (defvar bj-money 10000)
 (defvar bj-current-bet 500)
+(defvar bj-current-player-hand 0)
 
 (defvar bj-faces '((0 . ((0 . "A♠") (1 . "A♥") (2 . "A♣") (3 . "A♦")))
                    (1 . ((0 . "2♠") (1 . "2♥") (2 . "2♣") (3 . "2♦")))
@@ -47,6 +46,14 @@
                            (3 . 82)
                            (2 . 81)
                            (1 . 80)))
+
+(defun bj-card-is-ace (card)
+  "Return non-nil if CARD is an ace."
+  (eq 0 (cdr card)))
+
+(defun bj-card-is-ten (card)
+  "Return non-nil if CARD is ten or greater."
+  (> (cdr card) 8))
 
 (defun bj-deal-cards (count)
   "Deal COUNT cards."
@@ -195,6 +202,22 @@
   (let ((map (make-sparse-keymap)))
     (define-key map [mouse-1] 'bj-quit)
     (insert (propertize "[Quit]" 'keymap map 'mouse-face 'highlight 'help-echo "Quit") "  ")))
+
+(defun bj-hand-is-blackjack (cards)
+  "Return non-nil if hand CARDS is blackjack."
+  (if (eq 2 (length cards))
+      (let ((card-1 nil) (card-2 nil))
+        (setf card-1 (car cards))
+        (setf card-2 (cdr cards))
+        (if (or (and (bj-card-is-ace card-1) (bj-card-is-ten card-2)) (and (bj-card-is-ace card-2) (bj-card-is-ten card-1)))
+            t))))
+
+(defun bj-dealer-upcard-is-ace ()
+  "Return non-nil if dealer upcard is an ace."
+  (let ((cards nil) (card nil))
+    (setf cards (cdr (assq 'cards bj-dealer-hand)))
+    (setf card (cdr (assq 0 cards)))
+    (bj-card-is-ace card)))
 
 (defun bj-draw-dealer-hand ()
   "Draw the dealer hand."
