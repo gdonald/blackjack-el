@@ -22,6 +22,7 @@
 (defvar bj-money 10000)
 (defvar bj-current-bet 500)
 (defvar bj-current-player-hand 0)
+(defvar bj-max-player-hands 7)
 
 (defvar bj-faces '((0 . ((0 . "A♠") (1 . "A♥") (2 . "A♣") (3 . "A♦")))
                    (1 . ((0 . "2♠") (1 . "2♥") (2 . "2♣") (3 . "2♦")))
@@ -69,7 +70,11 @@
   (interactive)
   (if (bj-need-to-shuffle)
       (bj-shuffle))
-  (setf bj-player-hands `((0 . ((cards . ,(bj-deal-cards 2)) (bet . ,bj-current-bet)))))
+  (setf bj-player-hands `((0 . ((cards . ,(bj-deal-cards 2))
+                                (bet . ,bj-current-bet)
+                                (status . nil)
+                                (payed . nil)
+                                (stood . nil)))))
   (setf bj-dealer-hand `((cards . ,(bj-deal-cards 2))))
   (setf bj-hide-down-card t)
   (bj-draw-hands)
@@ -152,11 +157,36 @@
 
 (defun bj-can-split ()
   "Return non-nil if the current player hand can split."
-  t)
+  (let ((player-hand nil) (cards nil))
+    (setf player-hand (bj-get-current-player-hand))
+    (setf cards (assq 'cards player-hand))
+    (if (and
+         (not (assq 'stood player-hand))
+         (< (length bj-player-hands) 7)
+         (>= bj-money (+ (bj-all-bets) (assq 'bet player-hand)))
+         (eq (length cards) 2))
+        (let ((card-0 nil) (card-1 nil))
+          (setf card-0 (assq 0 cards))
+          (setf card-1 (assq 1 cards))
+          (if (eq (cdr card-0) (cdr card-1))
+              t)))))
 
 (defun bj-can-dbl ()
   "Return non-nil if the current player hand can double."
-  t)
+  (let ((player-hand nil) (cards nil))
+    (setf player-hand (bj-get-current-player-hand))
+    (setf cards (assq 'cards player-hand))
+    (if (and
+         (>= bj-money (+ (bj-all-bets) (assq 'bet player-hand)))
+         (not (or (assq 'stood player-hand) (not (eq 2 (length cards)))
+                  (bj-hand-is-blackjack cards))))
+        t)))
+
+(defun bj-get-current-player-hand ()
+  "Return current player hand."
+  (let ((player-hand nil))
+    (setf player-hand (assq bj-current-player-hand bj-player-hands))
+    player-hand))
 
 (defun bj-all-bets ()
   "Sum of all player hand bets."
@@ -206,10 +236,16 @@
 (defun bj-hand-is-blackjack (cards)
   "Return non-nil if hand CARDS is blackjack."
   (if (eq 2 (length cards))
-      (let ((card-1 nil) (card-2 nil))
-        (setf card-1 (car cards))
-        (setf card-2 (cdr cards))
-        (if (or (and (bj-card-is-ace card-1) (bj-card-is-ten card-2)) (and (bj-card-is-ace card-2) (bj-card-is-ten card-1)))
+      (let ((card-0 nil) (card-1 nil))
+        (setf card-0 (assq 0 cards))
+        (setf card-1 (assq 1 cards))
+        (if (or
+             (and
+              (bj-card-is-ace card-0)
+              (bj-card-is-ten card-1))
+             (and
+              (bj-card-is-ace card-1)
+              (bj-card-is-ten card-0)))
             t))))
 
 (defun bj-dealer-upcard-is-ace ()
