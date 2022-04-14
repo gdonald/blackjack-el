@@ -63,7 +63,7 @@
       (setf card (car bj-shoe))
       (push `(,x . ,(cdr card)) dealt)
       (setf bj-shoe (delq (assq (car card) bj-shoe) bj-shoe)))
-      dealt))
+    dealt))
 
 (defun bj-deal-hands ()
   "Deal new hands."
@@ -73,6 +73,7 @@
   (setf bj-player-hands `((0 . ((cards . ,(bj-deal-cards 2))
                                 (bet . ,bj-current-bet)
                                 (status . nil)
+                                (played . nil)
                                 (payed . nil)
                                 (stood . nil)))))
   (setf bj-dealer-hand `((cards . ,(bj-deal-cards 2))))
@@ -149,11 +150,27 @@
 
 (defun bj-can-hit ()
   "Return non-nil if the current player hand can hit."
-  t)
+  (let ((player-hand nil) (cards nil))
+    (setf player-hand (bj-get-current-player-hand))
+    (setf cards (assq 'cards player-hand))
+    (if (not (or
+              (assq 'played player-hand)
+              (assq 'stood player-hand)
+              (eq (bj-player-hand-value cards) 21)
+              (bj-hand-is-blackjack cards)
+              (bj-player-hand-is-busted cards)))
+        t)))
 
 (defun bj-can-stand ()
   "Return non-nil if the current player hand can stand."
-  t)
+  (let ((player-hand nil) (cards nil))
+    (setf player-hand (bj-get-current-player-hand))
+    (setf cards (assq 'cards player-hand))
+    (if (not (or
+              (assq 'stood player-hand)
+              (bj-player-hand-is-busted cards)
+              (bj-hand-is-blackjack cards)))
+        t)))
 
 (defun bj-can-split ()
   "Return non-nil if the current player hand can split."
@@ -232,6 +249,16 @@
   (let ((map (make-sparse-keymap)))
     (define-key map [mouse-1] 'bj-quit)
     (insert (propertize "[Quit]" 'keymap map 'mouse-face 'highlight 'help-echo "Quit") "  ")))
+
+(defun bj-player-hand-is-busted (cards)
+  "Return non-nil if hand CARDS value is more than 21."
+  (if (> (bj-player-hand-value cards 'soft) 21)
+      t))
+
+(defun bj-dealer-hand-is-busted (cards)
+  "Return non-nil if hand CARDS value is more than 21."
+  (if (> (bj-dealer-hand-value cards 'soft) 21)
+      t))
 
 (defun bj-hand-is-blackjack (cards)
   "Return non-nil if hand CARDS is blackjack."
