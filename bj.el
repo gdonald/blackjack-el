@@ -134,19 +134,46 @@
 
 (defun bj-hit ()
   "Deal a new card to the current player hand."
-  (interactive))
-
-(defun bj-stand ()
-  "End the current player hand."
-  (interactive))
-
-(defun bj-split ()
-  "Split the current player hand."
-  (interactive))
+  (interactive)
+  (let ((player-hand nil) (cards nil) (card nil))
+    (setf player-hand (bj-get-current-player-hand))
+    (setf cards (assq 'cards player-hand))
+    (setf card (bj-deal-cards 1))
+    (setf cards (cons card cards))
+    (setf player-hand (delq (assq 'cards player-hand) player-hand))
+    (setf player-hand (cons `(cards . cards) player-hand))
+    (setf bj-player-hands `((bj-current-player-hand . player-hand)))))
 
 (defun bj-dbl ()
   "Double the current player hand."
-  (interactive))
+  (interactive)
+  (let ((player-hand nil) (cards nil) (card nil))
+    (setf player-hand (bj-get-current-player-hand))
+    (setf cards (assq 'cards player-hand))
+    (setf card (bj-deal-cards 1))
+    (setf cards (cons card cards))
+    (setf player-hand (delq (assq 'cards player-hand) player-hand))
+    (setf player-hand (cons `(cards . cards) player-hand))
+    (setf player-hand (delq (assq 'stood player-hand) player-hand))
+    (setf player-hand (cons `(stood . t) player-hand))
+    (setf bj-player-hands `((bj-current-player-hand . player-hand)))))
+
+(defun bj-stand ()
+  "End the current player hand."
+  (interactive)
+  (let ((player-hand nil))
+    (setf player-hand (bj-get-current-player-hand))
+    (setf player-hand (delq (assq 'stood player-hand) player-hand))
+    (setf player-hand (cons `(stood . t) player-hand))
+    (setf bj-player-hands `((bj-current-player-hand . player-hand)))))
+
+(defun bj-split ()
+  "Split the current player hand."
+  (interactive)(let ((player-hand nil) (cards nil))
+    (setf player-hand (bj-get-current-player-hand))
+    (setf cards (assq 'cards player-hand))
+    ;; TODO
+    ))
 
 (defun bj-can-hit ()
   "Return non-nil if the current player hand can hit."
