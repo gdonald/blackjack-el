@@ -132,6 +132,16 @@
   (bj-draw-player-hands)
   (insert "\n\n  "))
 
+(defun bj-ask-hand-action ()
+  "Ask action for current hand."
+  (let ((read-answer-short t))
+    (read-answer "Hand Action "
+		 '(("hit"    ?h "hit")
+		   ("stand"  ?s "stand")
+		   ("split"  ?p "split")
+		   ("double" ?d "double")
+		   ("help"   ?? "show help")))))
+
 (defun bj-hit ()
   "Deal a new card to the current player hand."
   (interactive)
