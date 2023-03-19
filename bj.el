@@ -79,7 +79,9 @@
   (setf bj-dealer-hand `((cards . ,(bj-deal-cards 2))))
   (setf bj-hide-down-card t)
   (bj-draw-hands)
-  (bj-draw-bet-options))
+  ;;(bj-draw-bet-options)
+  (bj-ask-hand-action)
+  )
 
 (defun bj-need-to-shuffle ()
   "Are shoe cards nearly exhausted?"
@@ -128,19 +130,9 @@
   (erase-buffer)
   (insert "\n  Dealer:\n")
   (bj-draw-dealer-hand)
-  (insert "\n\n  Player:\n\n")
+  (insert "\n\n  Player:\n")
   (bj-draw-player-hands)
   (insert "\n\n  "))
-
-(defun bj-ask-hand-action ()
-  "Ask action for current hand."
-  (let ((read-answer-short t))
-    (read-answer "Hand Action "
-		 '(("hit"    ?h "hit")
-		   ("stand"  ?s "stand")
-		   ("split"  ?p "split")
-		   ("double" ?d "double")
-		   ("help"   ?? "show help")))))
 
 (defun bj-hit ()
   "Deal a new card to the current player hand."
@@ -250,42 +242,29 @@
       (setf total (+ total (assq 'bet player-hand))))
     total))
 
-(defun bj-draw-player-hand-actions ()
-  "Draw player hand actions."
-  (if (bj-can-hit)
-      (let ((map (make-sparse-keymap)))
-        (define-key map [mouse-1] 'bj-hit)
-        (insert (propertize "[Hit]" 'keymap map 'mouse-face 'highlight 'help-echo "Hit") "  ")))
-  (if (bj-can-stand)
-      (let ((map (make-sparse-keymap)))
-        (define-key map [mouse-1] 'bj-stand)
-        (insert (propertize "[Stand]" 'keymap map 'mouse-face 'highlight 'help-echo "Stand") "  ")))
-  (if (bj-can-split)
-      (let ((map (make-sparse-keymap)))
-        (define-key map [mouse-1] 'bj-split)
-        (insert (propertize "[Split]" 'keymap map 'mouse-face 'highlight 'help-echo "Split") "  ")))
-  (if (bj-can-dbl)
-      (let ((map (make-sparse-keymap)))
-        (define-key map [mouse-1] 'bj-dbl)
-        (insert (propertize "[Double]" 'keymap map 'mouse-face 'highlight 'help-echo "Double") "  "))))
+(defun bj-ask-hand-action ()
+  "Ask action for current hand."
+  (let ((read-answer-short t) (actions nil))
+    (if (bj-can-hit)
+        (setf actions (cons '("hit" ?h "deal a new card") actions)))
+    (if (bj-can-stand)
+        (setf actions (cons '("stand" ?s "end hand") actions)))
+    (if (bj-can-split)
+        (setf actions (cons '("split" ?p "split hand") actions)))
+    (if (bj-can-dbl)
+        (setf actions (cons '("double" ?d "deal a new card and end hand") actions)))
+    (setf actions (cons '("help" ?? "show help") actions))
+    (read-answer "Hand Action " actions)))
 
-(defun bj-draw-bet-options ()
-  "Draw bet options."
-  (let ((map (make-sparse-keymap)))
-    (define-key map [mouse-1] 'bj-deal-hands)
-    (insert (propertize "[Deal Hand]" 'keymap map 'mouse-face 'highlight 'help-echo "Deal Hand") "  "))
-
-  (let ((map (make-sparse-keymap)))
-    (define-key map [mouse-1] 'bj-new-bet)
-    (insert (propertize "[Change Bet]" 'keymap map 'mouse-face 'highlight 'help-echo "Change Bet") "  "))
-
-  (let ((map (make-sparse-keymap)))
-    (define-key map [mouse-1] 'bj-game-otions)
-    (insert (propertize "[Options]" 'keymap map 'mouse-face 'highlight 'help-echo "Options") "  "))
-
-  (let ((map (make-sparse-keymap)))
-    (define-key map [mouse-1] 'bj-quit)
-    (insert (propertize "[Quit]" 'keymap map 'mouse-face 'highlight 'help-echo "Quit") "  ")))
+(defun bj-ask-bet-actions ()
+  "Ask next action."
+  (let ((read-answer-short t))
+        (read-answer "Game Action "
+                     '(("deal" ?d "deal a new hand")
+                       ("bet" ?b "change bet")
+                       ("options" ?o "change options")
+                       ("quit" ?q "quit")
+                       ("help" ?? "show help")))))
 
 (defun bj-player-hand-is-busted (cards)
   "Return non-nil if hand CARDS value is more than 21."
