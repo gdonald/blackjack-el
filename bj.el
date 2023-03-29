@@ -42,6 +42,51 @@
                    ["K♠" "K♥" "K♣" "K♦"]
                    ["??"]])
 
+(defclass card ()
+  ((value :initarg :value
+         :initform 0
+         :type 'integer
+         :documentation "the card value")
+   (suit :initarg :suit
+         :initform 0
+         :type 'integer
+         :documentation "the card suit")))
+
+(cl-defmethod ace-card ((c card))
+  "is the card C an ace?"
+  (= 0 (slot-value c 'value)))
+
+(cl-defmethod ten-card ((c card))
+  "is the card C a 10 value?"
+  (> 8 (slot-value c 'value)))
+
+(cl-defmethod value-of-card ((c card) method total)
+  "calculate value of a card C using METHOD and TOTAL"
+  (let (v (1+ (slot-value c 'value)))
+    (if (> v 9)
+        (setq v 10))
+    (if (and (= 1 v) (= m :soft) (< t 11))
+        (setq v 11))
+    v))
+
+(defclass hand ()
+  ((cards :initarg :cards
+          :initform '()
+          :type 'list
+          :documentation "the hand cards")
+   (blackjack :initarg :blackjack
+              :initform f
+              :type 'boolean
+              :documentation "hand is blackjack")
+   (played :initarg :played
+           :initform f
+           :type 'boolean
+           :documentation "hand has been played")))
+
+(cl-defmethod busted-hand ((h hand))
+  "is the hand busted?"
+  (> (value-hand(h) 21)))
+
 ;; (defvar bj-shuffle-specs '((8 . 95)
 ;;                            (7 . 92)
 ;;                            (6 . 89)
