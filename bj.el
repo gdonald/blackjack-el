@@ -42,26 +42,26 @@
                    ["K♠" "K♥" "K♣" "K♦"]
                    ["??"]])
 
-(defclass card ()
+(defclass bj-card ()
   ((value :initarg :value
          :initform 0
-         :type 'integer
+         :type number
          :documentation "the card value")
    (suit :initarg :suit
          :initform 0
-         :type 'integer
+         :type number
          :documentation "the card suit")))
 
-(cl-defmethod ace-card ((c card))
-  "is the card C an ace?"
+(cl-defmethod bj-ace-card ((c card))
+  "Is the card C an ace?"
   (= 0 (slot-value c 'value)))
 
-(cl-defmethod ten-card ((c card))
-  "is the card C a 10 value?"
+(cl-defmethod bj-ten-card ((c card))
+  "Is the card C a 10 value?"
   (> 8 (slot-value c 'value)))
 
-(cl-defmethod value-of-card ((c card) method total)
-  "calculate value of a card C using METHOD and TOTAL"
+(cl-defmethod bj-value-of-card ((c card) method total)
+  "Calculate value of a card C using METHOD and TOTAL."
   (let (v (1+ (slot-value c 'value)))
     (if (> v 9)
         (setq v 10))
@@ -69,22 +69,22 @@
         (setq v 11))
     v))
 
-(defclass hand ()
+(defclass bj-hand ()
   ((cards :initarg :cards
           :initform '()
-          :type 'list
+          :type list
           :documentation "the hand cards")
    (blackjack :initarg :blackjack
-              :initform f
-              :type 'boolean
+              :initform nil
+              :type boolean
               :documentation "hand is blackjack")
    (played :initarg :played
-           :initform f
-           :type 'boolean
+           :initform nil
+           :type boolean
            :documentation "hand has been played")))
 
-(cl-defmethod busted-hand ((h hand))
-  "is the hand busted?"
+(cl-defmethod bj-busted-hand ((h bj-hand))
+  "Is the hand H busted?"
   (> (value-hand(h) 21)))
 
 ;; (defvar bj-shuffle-specs '((8 . 95)
