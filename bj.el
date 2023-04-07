@@ -4,7 +4,7 @@
 
 ;; Author: Greg Donald <gdonald@gmail.com>
 ;; Version: 1.0
-;; Package-Requires: ()
+;; Package-Requires: ((cl-lib))
 ;; Keywords: games
 ;; URL: https://https://github.com/gdonald/bj-el
 
@@ -87,22 +87,14 @@
   "Is the hand H busted?"
   (> (value-hand(h) 21)))
 
-;; (defvar bj-shuffle-specs '((8 . 95)
-;;                            (7 . 92)
-;;                            (6 . 89)
-;;                            (5 . 86)
-;;                            (4 . 84)
-;;                            (3 . 82)
-;;                            (2 . 81)
-;;                            (1 . 80)))
-
-;; (defun bj-card-is-ace (card)
-;;   "Return non-nil if CARD is an ace."
-;;   (eq 0 (cdr card)))
-
-;; (defun bj-card-is-ten (card)
-;;   "Return non-nil if CARD is ten or greater."
-;;   (> (cdr card) 8))
+(defvar bj-shuffle-specs '[[8 95]
+                           [7 92]
+                           [6 89]
+                           [5 86]
+                           [4 84]
+                           [3 82]
+                           [2 81]
+                           [1 80]])
 
 ;; (defun bj-deal-cards (count)
 ;;   "Deal COUNT cards."
