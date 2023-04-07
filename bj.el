@@ -4,7 +4,7 @@
 
 ;; Author: Greg Donald <gdonald@gmail.com>
 ;; Version: 1.0
-;; Package-Requires: ((cl-lib))
+;; Package-Requires: ((emacs "25.1"))
 ;; Keywords: games
 ;; URL: https://https://github.com/gdonald/bj-el
 
@@ -15,6 +15,79 @@
 
 (require 'cl-lib)
 (require 'eieio)
+
+(defclass bj-card ()
+  ((value :initarg :value
+         :initform 0
+         :type integer
+         :documentation "the card value")
+   (suit :initarg :suit
+         :initform 0
+         :type integer
+         :documentation "the card suit")))
+
+(cl-defmethod bj-ace-card ((c card))
+  "Is the card C an ace?"
+  (= 0 (slot-value c 'value)))
+
+(cl-defmethod bj-ten-card ((c card))
+  "Is the card C a 10 value?"
+  (> 8 (slot-value c 'value)))
+
+(defun bj-value-of-card (card method total)
+  "Calculate value of a card C using METHOD and TOTAL."
+  (let (v (1+ (slot-value card 'value)))
+    (if (> v 9)
+        (setq v 10))
+    (if (and (= 1 v) (= method :soft) (< total 11))
+        (setq v 11))
+    v))
+
+(defclass bj-hand ()
+  ((cards :initarg :cards
+          :initform '()
+          :type list
+          :documentation "the hand cards")
+   (blackjack :initarg :blackjack
+              :initform nil
+              :type boolean
+              :documentation "hand is blackjack")
+   (played :initarg :played
+           :initform nil
+           :type boolean
+           :documentation "hand has been played")))
+
+(cl-defmethod bj-busted-hand ((h bj-hand))
+  "Is the hand H busted?"
+  (> ((bj-value-hand h) 21)))
+
+(cl-defmethod bj-value-hand ((h bj-hand))
+  "Value of hand H."
+  0)
+
+(defclass bj-player-hand (bj-hand)
+  ((bet :initarg :bet
+        :initform 0
+        :type integer
+        :documentation "the player hand bet")
+   (status :initarg :status
+           :initform :unknown
+           :type symbol
+           :documentation "current player hand status")
+   (payed :initarg :payed
+          :initform nil
+          :type boolean
+          :documentation "player hand has been payed")
+   (stood :intiarg :stood
+          :initform nil
+          :type boolean
+          :documentation "player hand stood")))
+
+(defclass bj-dealer-hand (bj-hand)
+  ((hide-first-card :initarg :hide-first-card
+                    :initform 't
+                    :type boolean
+                    :documentation "first card is face down")))
 
 (defvar bj-shoe nil)
 (defvar bj-player-hands nil)
@@ -41,51 +114,6 @@
                    ["Q♠" "Q♥" "Q♣" "Q♦"]
                    ["K♠" "K♥" "K♣" "K♦"]
                    ["??"]])
-
-(defclass bj-card ()
-  ((value :initarg :value
-         :initform 0
-         :type number
-         :documentation "the card value")
-   (suit :initarg :suit
-         :initform 0
-         :type number
-         :documentation "the card suit")))
-
-(cl-defmethod bj-ace-card ((c card))
-  "Is the card C an ace?"
-  (= 0 (slot-value c 'value)))
-
-(cl-defmethod bj-ten-card ((c card))
-  "Is the card C a 10 value?"
-  (> 8 (slot-value c 'value)))
-
-(cl-defmethod bj-value-of-card ((c card) method total)
-  "Calculate value of a card C using METHOD and TOTAL."
-  (let (v (1+ (slot-value c 'value)))
-    (if (> v 9)
-        (setq v 10))
-    (if (and (= 1 v) (= m :soft) (< t 11))
-        (setq v 11))
-    v))
-
-(defclass bj-hand ()
-  ((cards :initarg :cards
-          :initform '()
-          :type list
-          :documentation "the hand cards")
-   (blackjack :initarg :blackjack
-              :initform nil
-              :type boolean
-              :documentation "hand is blackjack")
-   (played :initarg :played
-           :initform nil
-           :type boolean
-           :documentation "hand has been played")))
-
-(cl-defmethod bj-busted-hand ((h bj-hand))
-  "Is the hand H busted?"
-  (> (value-hand(h) 21)))
 
 (defvar bj-shuffle-specs '[[8 95]
                            [7 92]
