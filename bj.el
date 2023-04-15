@@ -16,34 +16,34 @@
 (require 'cl-lib)
 (require 'eieio)
 
-(defconst BJ-FACES '[["A♠" "A♥" "A♣" "A♦"]
-                     ["2♠" "2♥" "2♣" "2♦"]
-                     ["3♠" "3♥" "3♣" "3♦"]
-                     ["4♠" "4♥" "4♣" "4♦"]
-                     ["5♠" "5♥" "5♣" "5♦"]
-                     ["6♠" "6♥" "6♣" "6♦"]
-                     ["7♠" "7♥" "7♣" "7♦"]
-                     ["8♠" "8♥" "8♣" "8♦"]
-                     ["9♠" "9♥" "9♣" "9♦"]
-                     ["T♠" "T♥" "T♣" "T♦"]
-                     ["J♠" "J♥" "J♣" "J♦"]
-                     ["Q♠" "Q♥" "Q♣" "Q♦"]
-                     ["K♠" "K♥" "K♣" "K♦"]
-                     ["??"]])
-
-(defconst BJ-SHUFFLE-SPECS '[80 81 82 84 86 89 92 95])
-(defconst BJ-CARDS-PER-DECK 52)
-(defconst BJ-MIN-BET 500)
-(defconst BJ-MAX-BET 100000000)
-
-(defvar bj-shoe nil)
-(defvar bj-player-hands nil)
-(defvar bj-dealer-hand nil)
-(defvar bj-num-decks 1)
-(defvar bj-money 10000)
-(defvar bj-current-bet 500)
-(defvar bj-current-player-hand 0)
-(defvar bj-max-player-hands 7)
+(defclass bj-game ()
+  ((shoe :initarg :shoe :initform '() :type list)
+   (dealer-hand :initarg :dealer-hand :initform '() :type list)
+   (player-hands :initarg :player-hands :initform '() :type list)
+   (num-decks :initarg :num-decks :initform 1 :type integer)
+   (money :initarg :money :initform 10000 :type integer)
+   (current-bet :initarg :current-bet :initform 500 :type integer)
+   (current-player-hand :initarg :current-player-hand :initform 0 :type integer)
+   (quitting :initarg :quitting :initform nil :type boolean)
+   (faces :initarg :faces :initform '[["A♠" "A♥" "A♣" "A♦"]
+				      ["2♠" "2♥" "2♣" "2♦"]
+				      ["3♠" "3♥" "3♣" "3♦"]
+				      ["4♠" "4♥" "4♣" "4♦"]
+				      ["5♠" "5♥" "5♣" "5♦"]
+				      ["6♠" "6♥" "6♣" "6♦"]
+				      ["7♠" "7♥" "7♣" "7♦"]
+				      ["8♠" "8♥" "8♣" "8♦"]
+				      ["9♠" "9♥" "9♣" "9♦"]
+				      ["T♠" "T♥" "T♣" "T♦"]
+				      ["J♠" "J♥" "J♣" "J♦"]
+				      ["Q♠" "Q♥" "Q♣" "Q♦"]
+				      ["K♠" "K♥" "K♣" "K♦"]
+				      ["??"]] :type array)
+   (shuffle-specs :initarg :shuffle-specs :initform '[80 81 82 84 86 89 92 95] :type array)
+   (cards-per-deck :initarg :cards-per-deck :initform 52 :type integer)
+   (min-bet :initarg :min-bet :initform 500 :type integer)
+   (max-bet :initarg :min-bet :initform 100000000 :type integer)
+   (max-player-hands :initarg :min-bet :initform 7 :type integer)))
 
 (defclass bj-card ()
   ((value :initarg :value :initform 0 :type integer)
@@ -59,78 +59,85 @@
    (payed :initarg :payed :initform nil :type boolean)
    (stood :intiarg :stood :initform nil :type boolean)))
 
-(defclass bj-dealer-hnd (bj-hand)
+(defclass bj-dealer-hand (bj-hand)
   ((hide-down-card :initarg :hide-down-card :initform t :type boolean)))
 
-(defun bj-deal-cards (count)
-  "Deal COUNT cards."
-  (let ((dealt nil) (card nil))
-    (dotimes (x count)
-      (setf card (car bj-shoe))
-      (setf dealt (cons card dealt))
-      (setf bj-shoe (remove card bj-shoe)))
-    dealt))
+(defun bj-deal-new-hand (game)
+  "Deal new GAME hands."
+  (let ((shoe (slot-value game 'shoe))
+	(player-hand nil)
+	(dealer-hand nil))
 
-(defun bj-deal-new-hand ()
-  "Deal new hands."
-  (interactive)
-  (let ((player-hand nil))
-    (if (bj-need-to-shuffle)
-        (bj-shuffle))
-    (setf bj-player-hands nil)
-    (setf player-hand (bj-player-hand :cards (bj-deal-cards 2)
-                                      :bet bj-current-bet))
-    (push player-hand bj-player-hands)
-    (setf bj-dealer-hand (bj-dealer-hnd :cards (bj-deal-cards 2)))
-    (if (and (bj-dealer-upcard-is-ace) (bj-hand-is-blackjack (nth 0 bj-player-hands)))
+    (if (bj-need-to-shuffle shoe)
+        (bj-shuffle shoe))
+
+    (setf (slot-value game 'player-hands) '())
+    (setf player-hand (bj-player-hand :bet (slot-value game 'current-bet)))
+    (bj-deal-cards shoe (slot-value player-hand 'cards) 2)
+    (push player-hand (slot-value game 'player-hands))
+    (setf dealer-hand (bj-dealer-hand))
+    (bj-deal-cards shoe (slot-value dealer-hand 'cards) 2)
+    (setf (slot-value game 'dealer-hand) dealer-hand)
+
+    (if (and (bj-dealer-upcard-is-ace game) (bj-hand-is-blackjack player-hand))
         (progn
-          (bj-draw-hands)
-          (bj-ask-insurance))
+          (bj-draw-hands game)
+          (bj-ask-insurance game))
       (if (bj-player-hand-done player-hand)
           (progn
-            (setf (slot-value bj-dealer-hand 'hide-down-card) nil)
-            (bj-pay-hands)
-            (bj-draw-hands)
-            (bj-ask-bet-action))
+            (setf (slot-value dealer-hand 'hide-down-card) nil)
+            (bj-pay-hands game)
+            (bj-draw-hands game)
+            (bj-ask-bet-action game))
         (progn
-          (bj-draw-hands)
-          (bj-ask-hand-action)
-          (bj-save-game))))))
+          (bj-draw-hands game)
+          (bj-ask-hand-action game)
+          (bj-save game))))))
 
-(defun bj-pay-hands ()
-  "Pay player hands."
-  (let ((dealer-hand-value nil) (dealer-busted))
-    (setf dealer-hand-value (bj-dealer-hand-value 'soft))
-    (setf dealer-busted (bj-dealer-hand-is-busted))
-    (dotimes (x (length bj-player-hands))
-      (bj-pay-player-hand (nth x bj-player-hands) dealer-hand-value dealer-busted))
+(defun bj-deal-cards (shoe hand count)
+  "Deal COUNT cards into HAND from SHOE."
+  (let ((card nil))
+    (dotimes (x count)
+      (setf card (car shoe))
+      (push card hand)
+      (setf shoe (remove card shoe)))))
+
+(defun bj-pay-hands (game)
+  "Pay GAME player hands."
+  (let ((dealer-hand-value (bj-dealer-hand-value game 'soft))
+	(dealer-busted (bj-dealer-hand-is-busted game))
+	(player-hands (slot-value game 'player-hands)))
+    (dotimes (x (length player-hands))
+      (bj-pay-player-hand game (nth x player-hands) dealer-hand-value dealer-busted))
     (bj-normalize-current-bet)
     (bj-save-game)))
 
-(defun bj-pay-player-hand (player-hand dealer-hand-value dealer-hand-busted)
-  "Pay PLAYER-HAND based on DEALER-HAND-VALUE and DEALER-HAND-BUSTED."
+(defun bj-pay-player-hand (game player-hand dealer-hand-value dealer-hand-busted)
+  "Pay GAME PLAYER-HAND based on DEALER-HAND-VALUE and DEALER-HAND-BUSTED."
   (if (not (slot-value player-hand 'payed))
       (progn
         (setf (slot-value player-hand 'payed) t)
-        (let ((player-hand-value nil))
+        (let ((player-hand-value nil)
+	      (money (slot-value game 'money))
           (setf player-hand-value (bj-player-hand-value (slot-value player-hand 'cards) 'soft))
           (if (bj-player-hand-won player-hand-value dealer-hand-value dealer-hand-busted)
-              (bj-pay-won-hand player-hand)
+              (bj-pay-won-hand money player-hand)
             (if (bj-player-hand-lost player-hand-value dealer-hand-value)
-                (bj-collect-lost-hand player-hand)
+                (bj-collect-lost-hand money player-hand)
               (setf (slot-value player-hand 'status) 'push)))))))
 
-(defun bj-collect-lost-hand (player-hand)
-  "Collect bet from losing PLAYER-HAND."
-  (setf bj-money (- bj-money (slot-value player-hand 'bet)))
+(defun bj-collect-lost-hand (money player-hand)
+  "Collect bet into MONEY from losing PLAYER-HAND."
+  (setf money (- money (slot-value player-hand 'bet)))
   (setf (slot-value player-hand 'status) 'lost))
 
-(defun bj-pay-won-hand (player-hand)
-  "Pay winning PLAYER-HAND."
-  (if (bj-hand-is-blackjack (slot-value player-hand 'cards))
-      (setf (slot-value player-hand 'bet) (* 1.5 (slot-value player-hand 'bet))))
-  (setf bj-money (+ bj-money (slot-value player-hand 'bet)))
-  (setf (slot-value player-hand 'status) 'won))
+(defun bj-pay-won-hand (money player-hand)
+  "Pay winning PLAYER-HAND bet into MONEY."
+  (let ((bet (slot-value player-hand 'bet)))
+    (if (bj-hand-is-blackjack (slot-value player-hand 'cards))
+	(setf bet (* 1.5 bet)))
+    (setf money (+ money bet))
+    (setf (slot-value player-hand 'status) 'won)))
 
 (defun bj-player-hand-lost (player-hand-value dealer-hand-value)
   "Return non-nil if PLAYER-HAND-VALUE < DEALER-HAND-VALUE."
@@ -507,11 +514,12 @@
   "Run Blackjack."
   (interactive)
   (let ((debug-on-error t))
-    (let ((buffer-name "bj"))
+    (let ((buffer-name "bj") (game bj-game))
       (get-buffer-create buffer-name)
       (switch-to-buffer buffer-name)
       (with-current-buffer buffer-name
-        (bj-deal-new-hand)))))
+	(while (not (slot-value game 'quitting))
+	  (bj-deal-new-hand game))))))
 
 (provide 'bj)
 ;;; bj.el ends here
