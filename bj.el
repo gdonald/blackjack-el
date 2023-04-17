@@ -77,8 +77,10 @@
     (setf dealer-hand (bj-dealer-hand))
     (bj-deal-cards game dealer-hand 2)
     (setf (slot-value game 'dealer-hand) dealer-hand)
-
-    (if (and (bj-dealer-upcard-is-ace dealer-hand) (bj-hand-is-blackjack player-hand))
+    
+    (if (and
+	 (bj-dealer-upcard-is-ace dealer-hand)
+	 (bj-hand-is-blackjack (slot-value player-hand 'cards)))
         (progn
           (bj-draw-hands game)
 	  (bj-ask-insurance))
@@ -158,8 +160,8 @@
 
 (defun bj-player-hand-done (game player-hand)
   "Return non-nil when GAME PLAYER-HAND is done."
-  (if (bj-no-more-actions player-hand)
-      t
+  (if (not (bj-no-more-actions player-hand))
+      nil
     (progn
       (setf (slot-value player-hand 'played) t)
       (if
@@ -232,19 +234,46 @@
   (bj-draw-player-hands game)
   (insert "\n\n  "))
 
+(defun bj-more-hands-to-play (game)
+  "Are there more GAME hands to play?"
+  (let* ((current-player-hand (slot-value game 'current-player-hand))
+	 (player-hands (slot-value game 'player-hands)))
+    (< current-player-hand (-1 (length player-hands)))))
+
+(defun bj-play-more-hands (game)
+  "Advance to next GAME player hand."
+  ;; TODO
+  )
+
+(defun bj-play-dealer-hand (game)
+  "Player GAME dealer hand."
+  ;; TODO
+  )
+
+(defun bj-process (game)
+  "Handle more GAME hands to play."
+  (if (bj-more-hands-to-play game)
+      (bj-play-more-hands game)
+    (bj-play-dealer-hand game)))
+
 (defun bj-hit (game)
   "Deal a new card to the current GAME player hand."
   (let* ((player-hand (bj-get-current-player-hand game))
 	 (cards (slot-value player-hand 'cards))
 	 (shoe (slot-value game 'shoe)))
-    (bj-deal-cards shoe cards 1)))
+    (bj-deal-cards game player-hand 1)
+    (if (bj-player-hand-done game player-hand)
+	(bj-process game)
+      (progn
+	(bj-draw-hands game)
+	(bj-ask-hand-action game)))))
 
 (defun bj-dbl (game)
   "Double the current GAME player hand."
   (let* ((player-hand (bj-get-current-player-hand game))
 	 (cards (slot-value player-hand 'cards))
 	 (shoe (slot-value game 'shoe)))
-    (bj-deal-cards shoe cards 1)
+    (bj-deal-cards game player-hand 1)
     (setf (slot-value player-hand 'stood) t)))
 
 (defun bj-stand (game)
@@ -263,23 +292,21 @@
   "Return non-nil if the current GAME player hand can hit."
   (let* ((player-hand (bj-get-current-player-hand game))
 	 (cards (slot-value player-hand 'cards)))
-    (if (not (or
-	      (slot-value player-hand 'played)
-	      (slot-value player-hand 'stood)
-	      (eq (bj-player-hand-value cards 'soft) 21)
-	      (bj-hand-is-blackjack cards)
-	      (bj-player-hand-is-busted cards)))
-        t)))
+    (not (or
+	  (slot-value player-hand 'played)
+	  (slot-value player-hand 'stood)
+	  (= 21 (bj-player-hand-value cards 'soft))
+	  (bj-hand-is-blackjack cards)
+	  (bj-player-hand-is-busted cards)))))
 
 (defun bj-can-stand (game)
   "Return non-nil if the current GAME player hand can stand."
   (let* ((player-hand (bj-get-current-player-hand game))
 	 (cards (slot-value player-hand 'cards)))
-    (if (not (or
-	      (slot-value player-hand 'stood)
-	      (bj-player-hand-is-busted cards)
-	      (bj-hand-is-blackjack cards)))
-        t)))
+    (not (or
+	  (slot-value player-hand 'stood)
+	  (bj-player-hand-is-busted cards)
+	  (bj-hand-is-blackjack cards)))))
 
 (defun bj-can-split (game)
   "Return non-nil if the current GAME player hand can split."
@@ -318,8 +345,24 @@
     total))
 
 (defun bj-ask-hand-action (game)
-  "Ask hand actions for GAME."
-  (let* ((read-answer-short t) (actions nil))
+  "Ask hand action for GAME."
+  (let* ((answer (bj-hand-actions-menu game)))
+    (message "answer: %s" answer)
+    (pcase answer
+      ("stand" (if (bj-can-stand game)
+		   (bj-stand game)
+		 (bj-ask-hand-action game)))
+      ("hit" (if (bj-can-hit game)
+		 (bj-hit game)
+	       (bj-ask-hand-action game)))
+      ("split" (if (bj-can-split game)
+		   (bj-split game)
+		 (bj-ask-hand-action game))))))
+
+(defun bj-hand-actions-menu (game)
+  "Hand actions menu for GAME."
+  (let* ((read-answer-short t)
+	 (actions '(("help" ?? "show help"))))
     (if (bj-can-hit game)
         (setf actions (cons '("hit" ?h "deal a new card") actions)))
     (if (bj-can-stand game)
@@ -328,7 +371,6 @@
         (setf actions (cons '("split" ?p "split hand") actions)))
     (if (bj-can-dbl game)
         (setf actions (cons '("double" ?d "deal a new card and end hand") actions)))
-    (setf actions (cons '("help" ?? "show help") actions))
     (read-answer "Hand Action " actions)))
 
 (defun bj-ask-insurance ()
