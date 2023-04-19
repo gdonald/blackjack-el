@@ -20,6 +20,15 @@
   ((value :initarg :value :initform 0 :type integer)
    (suit :initarg :suit :initform 0 :type integer)))
 
+(cl-defmethod cl-print-object ((obj bj-card) stream)
+  "Print OBJ to STREAM."
+  (princ
+   (format "#<%s value: %s suit: %s>"
+           (eieio-class-name (eieio-object-class obj))
+           (slot-value obj 'value)
+	   (slot-value obj 'suit))
+   stream))
+
 (defclass bj-hand ()
   ((cards :initarg :cards :initform '() :type list)
    (played :initarg :played :initform nil :type boolean)))
@@ -30,8 +39,31 @@
    (payed :initarg :payed :initform nil :type boolean)
    (stood :intiarg :stood :initform nil :type boolean)))
 
+(cl-defmethod cl-print-object ((obj bj-player-hand) stream)
+  "Print OBJ to STREAM."
+  (princ
+   (format "#<%s cards: %s played: %s status: %s payed: %s stood: %s bet: %s>"
+           (eieio-class-name (eieio-object-class obj))
+           (slot-value obj 'cards)
+	   (slot-value obj 'played)
+	   (slot-value obj 'status)
+	   (slot-value obj 'payed)
+	   (slot-value obj 'stood)
+	   (slot-value obj 'bet))
+   stream))
+
 (defclass bj-dealer-hand (bj-hand)
   ((hide-down-card :initarg :hide-down-card :initform t :type boolean)))
+
+(cl-defmethod cl-print-object ((obj bj-dealer-hand) stream)
+  "Print OBJ to STREAM."
+  (princ
+   (format "#<%s cards: %s played: %s hide-down-card: %s>"
+           (eieio-class-name (eieio-object-class obj))
+           (slot-value obj 'cards)
+	   (slot-value obj 'played)
+	   (slot-value obj 'hide-down-card))
+   stream))
 
 (defclass bj-game ()
   ((shoe :initarg :shoe :initform '() :type list)
@@ -72,10 +104,13 @@
 
     (setf (slot-value game 'player-hands) '())
     (setf player-hand (bj-player-hand :bet (slot-value game 'current-bet)))
-    (bj-deal-cards game player-hand 2)
-    (push player-hand (slot-value game 'player-hands))
     (setf dealer-hand (bj-dealer-hand))
-    (bj-deal-cards game dealer-hand 2)
+
+    (dotimes (x 2)
+      (bj-deal-card game player-hand)
+      (bj-deal-card game dealer-hand))
+
+    (push player-hand (slot-value game 'player-hands))
     (setf (slot-value game 'dealer-hand) dealer-hand)
     
     (if (and
@@ -95,15 +130,14 @@
           (bj-ask-hand-action game)
           (bj-save game))))))
 
-(defun bj-deal-cards (game hand count)
+(defun bj-deal-card (game hand)
   "Deal COUNT cards into HAND from GAME shoe."
   (let* ((shoe (slot-value game 'shoe))
 	 (cards (slot-value hand 'cards))
 	 (card nil))
-    (dotimes (x count)
-      (setf card (car shoe))
-      (setf cards (cons card cards))
-      (setf shoe (remove card shoe)))
+    (setf card (car shoe))
+    (setf cards (cons card cards))
+    (setf shoe (cl-remove card shoe :count 1))
     (setf (slot-value hand 'cards) cards)
     (setf (slot-value game 'shoe) shoe)))
 
@@ -195,7 +229,7 @@
 	 (num-decks (slot-value game 'num-decks)))
     (if (> cards-count 0)
 	(progn
-	  (let* ((used (- (* num-decks (slot-value game 'cards-per-deck) cards-count)))
+	  (let* ((used (- (* num-decks (slot-value game 'cards-per-deck)) cards-count))
 		 (spec (aref (slot-value game 'shuffle-specs) (1- (slot-value game 'num-decks)))))
 	    (> (* 100 (/ (float used) cards-count)) spec)))
       t)))
@@ -206,7 +240,8 @@
     (dotimes (n (slot-value game 'num-decks))
       (dotimes (suit 4)
         (dotimes (value 13)
-          (push (bj-card :value value :suit suit) shoe))))
+;;          (push (bj-card :value value :suit suit) shoe))))
+          (setf shoe (cons (bj-card :value 7 :suit suit) shoe)))))
     (setf shoe (bj-shuffle-loop shoe))
     (setf (slot-value game 'shoe) shoe)))
 
@@ -219,11 +254,10 @@
 (defun bj-move-rand-card (shoe)
   "Move a random card to the top of the SHOE."
   (let* ((rand (random (length shoe)))
-         (card (nth rand shoe))
-         (new-shoe nil))
-    (setf shoe (remove card shoe))
-    (setf new-shoe (cons card shoe))
-    new-shoe))
+         (card (nth rand shoe)))
+    (setf shoe (cl-remove card shoe :count 1))
+    (setf shoe (cons card shoe))
+    shoe))
 
 (defun bj-draw-hands (game)
   "Draw GAME dealer and player hands."
@@ -245,7 +279,7 @@
   (let* ((current-hand (slot-value game 'current-player-hand))
 	 (current-player-hand (bj-current-player-hand game)))
     (setf (slot-value game 'current-hand) (1+ current-hand))
-    (bj-deal-cards game current-player-hand 1)
+    (bj-deal-card game current-player-hand)
     (if (bj-player-hand-done game current-player-hand)
 	(bj-process game)
       (bj-ask-hand-action game))))
@@ -256,7 +290,7 @@
     (dolist (player-hand player-hands)
       (when (not
 	     (or
-	      (bj-player-hand-is-busted player-hand)
+	      (bj-player-hand-is-busted (slot-value player-hand 'cards))
 	      (bj-hand-is-blackjack (slot-value player-hand 'cards))))
 	(cl-return t)))))
 
@@ -273,7 +307,7 @@
     (while (and
 	    (< (nth 0 counts) 18)
 	    (< (nth 1 counts) 17))
-      (bj-deal-cards game dealer-hand 1)
+      (bj-deal-card game dealer-hand)
       (setf counts (bj-dealer-hand-counts dealer-hand)))))
 
 (defun bj-play-dealer-hand (game)
@@ -297,9 +331,8 @@
 (defun bj-hit (game)
   "Deal a new card to the current GAME player hand."
   (let* ((player-hand (bj-current-player-hand game))
-	 (cards (slot-value player-hand 'cards))
-	 (shoe (slot-value game 'shoe)))
-    (bj-deal-cards game player-hand 1)
+	 (cards (slot-value player-hand 'cards)))
+    (bj-deal-card game player-hand)
     (if (bj-player-hand-done game player-hand)
 	(bj-process game)
       (progn
@@ -311,7 +344,7 @@
   (let* ((player-hand (bj-current-player-hand game))
 	 (cards (slot-value player-hand 'cards))
 	 (shoe (slot-value game 'shoe)))
-    (bj-deal-cards game player-hand 1)
+    (bj-deal-card game player-hand)
     (setf (slot-value player-hand 'stood) t)))
 
 (defun bj-stand (game)
@@ -489,7 +522,7 @@
       (if (not (and hide-down-card (= x 0)))
           (progn
 	    (setf card (nth x cards))
-	    (setf total (+ total (bj-card-value card count-method total))))))
+	    (setf total (+ total (bj-card-val card count-method total))))))
     (if (and (eq count-method 'soft) (> total 21))
         (setf total (bj-dealer-hand-value dealer-hand 'hard)))
     total))
@@ -520,15 +553,16 @@
 
 (defun bj-player-hand-value (cards count-method)
   "Calculates CARDS total value based on COUNT-METHOD."
-  (let* ((total 0) (card nil))
+  (let* ((total 0)
+	 (card nil))
     (dotimes (x (length cards))
       (setf card (nth x cards))
-      (setf total (+ total (bj-card-value card count-method total))))
+      (setf total (+ total (bj-card-val card count-method total))))
     (if (and (eq count-method 'soft) (> total 21))
         (setf total (bj-player-hand-value cards 'hard)))
     total))
 
-(defun bj-card-value (card count-method total)
+(defun bj-card-val (card count-method total)
   "Calculates CARD value based on COUNT-METHOD and running hand TOTAL."
   (let* ((value (1+ (slot-value card 'value))))
     (if (> value 9)
