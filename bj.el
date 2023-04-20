@@ -70,24 +70,40 @@
    (dealer-hand :initarg :dealer-hand :initform nil :type atom)
    (player-hands :initarg :player-hands :initform '() :type list)
    (num-decks :initarg :num-decks :initform 1 :type integer)
+   (deck-type :initarg :deck-type :initform 'regular :type symbol)
+   (face-type :initarg :face-type :initform 'ascii :type symbol)
    (money :initarg :money :initform 10000 :type integer)
    (current-bet :initarg :current-bet :initform 500 :type integer)
    (current-player-hand :initarg :current-player-hand :initform 0 :type integer)
    (quitting :initarg :quitting :initform nil :type boolean)
-   (faces :initarg :faces :initform '[["A♠" "A♥" "A♣" "A♦"]
-				      ["2♠" "2♥" "2♣" "2♦"]
-				      ["3♠" "3♥" "3♣" "3♦"]
-				      ["4♠" "4♥" "4♣" "4♦"]
-				      ["5♠" "5♥" "5♣" "5♦"]
-				      ["6♠" "6♥" "6♣" "6♦"]
-				      ["7♠" "7♥" "7♣" "7♦"]
-				      ["8♠" "8♥" "8♣" "8♦"]
-				      ["9♠" "9♥" "9♣" "9♦"]
-				      ["T♠" "T♥" "T♣" "T♦"]
-				      ["J♠" "J♥" "J♣" "J♦"]
-				      ["Q♠" "Q♥" "Q♣" "Q♦"]
-				      ["K♠" "K♥" "K♣" "K♦"]
-				      ["??"]] :type array)
+   (faces-ascii :initarg :faces :initform '[["A♠" "A♥" "A♣" "A♦"]
+					    ["2♠" "2♥" "2♣" "2♦"]
+					    ["3♠" "3♥" "3♣" "3♦"]
+					    ["4♠" "4♥" "4♣" "4♦"]
+					    ["5♠" "5♥" "5♣" "5♦"]
+					    ["6♠" "6♥" "6♣" "6♦"]
+					    ["7♠" "7♥" "7♣" "7♦"]
+					    ["8♠" "8♥" "8♣" "8♦"]
+					    ["9♠" "9♥" "9♣" "9♦"]
+					    ["T♠" "T♥" "T♣" "T♦"]
+					    ["J♠" "J♥" "J♣" "J♦"]
+					    ["Q♠" "Q♥" "Q♣" "Q♦"]
+					    ["K♠" "K♥" "K♣" "K♦"]
+					    ["??"]] :type array)
+   (faces-unicode :initarg :faces2 :initform '[["🂡" "🂱" "🃁" "🃑"]
+					       ["🂢" "🂲" "🃂" "🃒"]
+					       ["🂣" "🂳" "🃃" "🃓"]
+					       ["🂤" "🂴" "🃄" "🃔"]
+					       ["🂥" "🂵" "🃅" "🃕"]
+					       ["🂦" "🂶" "🃆" "🃖"]
+					       ["🂧" "🂷" "🃇" "🃗"]
+					       ["🂨" "🂸" "🃈" "🃘"]
+					       ["🂩" "🂹" "🃉" "🃙"]
+					       ["🂪" "🂺" "🃊" "🃚"]
+					       ["🂫" "🂻" "🃋" "🃛"]
+					       ["🂭" "🂽" "🃍" "🃝"]
+					       ["🂮" "🂾" "🃎" "🃞"]
+					       ["🂠"]] :type array)
    (shuffle-specs :initarg :shuffle-specs :initform '[80 81 82 84 86 89 92 95] :type array)
    (cards-per-deck :initarg :cards-per-deck :initform 52 :type integer)
    (min-bet :initarg :min-bet :initform 500 :type integer)
@@ -97,7 +113,7 @@
 (defun bj-deal-new-hand (game)
   "Deal new GAME hands."
   (if (bj-need-to-shuffle game)
-      (bj-shuffle game))
+      (bj-shuffle game (slot-value game 'deck-type)))
   (let* ((shoe (slot-value game 'shoe))
 	 (player-hand nil)
 	 (dealer-hand nil))
@@ -124,7 +140,7 @@
 	    (setf (slot-value dealer-hand 'hide-down-card) nil)
             (bj-pay-hands game)
             (bj-draw-hands game)
-            (bj-ask-bet-action))
+            (bj-ask-bet-action game))
         (progn
           (bj-draw-hands game)
           (bj-ask-hand-action game)
@@ -234,8 +250,8 @@
 	    (> (* 100 (/ (float used) cards-count)) spec)))
       t)))
 
-(defun bj-shuffle (game)
-  "Create and add cards to the GAME shoe."
+(defun bj-shuffle (game type)
+  "Create and add cards to the GAME shoe by TYPE."
   (let* ((shoe '()))
     (dotimes (n (slot-value game 'num-decks))
       (dotimes (suit 4)
@@ -264,9 +280,16 @@
   (erase-buffer)
   (insert "\n  Dealer:\n")
   (bj-draw-dealer-hand game)
-  (insert "\n\n  Player:\n")
+  (insert "\n\n  Player $")
+  (insert (format "%d" (bj-format-money (/ (slot-value game 'money) 100))))
+  (insert ":\n")
   (bj-draw-player-hands game)
   (insert "\n\n  "))
+
+(defun bj-format-money (money)
+  "Format MONEY."
+  ;; TODO
+  money)
 
 (defun bj-more-hands-to-play (game)
   "Are there more GAME hands to play?"
@@ -287,26 +310,31 @@
 (defun bj-need-to-play-dealer-hand (game)
   "Do player hands require playing the GAME dealer hand?"
   (let* ((player-hands (slot-value game 'player-hands)))
-    (dolist (player-hand player-hands)
-      (when (not
-	     (or
-	      (bj-player-hand-is-busted (slot-value player-hand 'cards))
-	      (bj-hand-is-blackjack (slot-value player-hand 'cards))))
+    (cl-dolist (player-hand player-hands)
+      (when
+	  (not
+	   (or
+	    (bj-player-hand-is-busted (slot-value player-hand 'cards))
+	    (bj-hand-is-blackjack (slot-value player-hand 'cards))))
 	(cl-return t)))))
 
 (defun bj-dealer-hand-counts (dealer-hand)
   "Calculates soft and hard counts for DEALER-HAND."
   (let* ((soft-count (bj-dealer-hand-value dealer-hand 'soft))
-	 (hard-count (bj-dealer-hand-value dealer-hand 'hard)))
-    '(soft-count hard-count)))
+	 (hard-count (bj-dealer-hand-value dealer-hand 'hard))
+	 (counts '()))
+    (setf counts (cons hard-count counts))
+    (setf counts (cons soft-count counts))
+    counts))
 
 (defun bj-deal-required-cards (game)
   "Dealer required cards for GAME dealer hand."
   (let* ((dealer-hand (slot-value game 'dealer-hand))
 	 (counts (bj-dealer-hand-counts dealer-hand)))
-    (while (and
-	    (< (nth 0 counts) 18)
-	    (< (nth 1 counts) 17))
+    (while
+	(and
+	 (< (nth 0 counts) 18)
+	 (< (nth 1 counts) 17))
       (bj-deal-card game dealer-hand)
       (setf counts (bj-dealer-hand-counts dealer-hand)))))
 
@@ -315,12 +343,17 @@
   (let* ((playing (bj-need-to-play-dealer-hand game))
 	 (dealer-hand (slot-value game 'dealer-hand))
 	 (cards (slot-value dealer-hand 'cards)))
-    (if (or playing (bj-hand-is-blackjack cards))
+    (if
+	(or
+	 playing
+	 (bj-hand-is-blackjack cards))
 	(setf (slot-value dealer-hand 'hide-down-card) nil))
     (if playing
 	(bj-deal-required-cards game))
     (setf (slot-value dealer-hand 'played) t)
-    (bj-pay-hands game)))
+    (bj-pay-hands game)
+    (bj-draw-hands game)
+    (bj-ask-bet-action game)))
 
 (defun bj-process (game)
   "Handle more GAME hands to play."
@@ -350,7 +383,10 @@
 (defun bj-stand (game)
   "End the current GAME player hand."
   (let* ((player-hand (bj-current-player-hand game)))
-    (setf (slot-value player-hand 'stood) t)))
+    (setf
+     (slot-value player-hand 'stood) t
+     (slot-value player-hand 'played) t)
+    (bj-process game)))
 
 (defun bj-split (game)
   "Split the current GAME player hand."
@@ -418,7 +454,7 @@
 (defun bj-ask-hand-action (game)
   "Ask hand action for GAME."
   (let* ((answer (bj-hand-actions-menu game)))
-    (message "answer: %s" answer)
+    (message "hand action answer: %s" answer)
     (pcase answer
       ("stand" (if (bj-can-stand game)
 		   (bj-stand game)
@@ -452,8 +488,18 @@
                    ("no" ?n "no insurance")
                    ("help" ?? "show help")))))
 
-(defun bj-ask-bet-action ()
-  "Ask about next bet action."
+(defun bj-ask-bet-action (game)
+  "Ask about next GAME bet action."
+  (let* ((answer (bj-bet-actions-menu game)))
+    (message "bet action answer: %s" answer)
+    (pcase answer
+      ("deal" nil)
+      ("bet" (bj-ask-new-bet game))
+      ("options" (bj-ask-game-options game))
+      ("quit" (setf (slot-value game 'quitting) t)))))
+
+(defun bj-bet-actions-menu (game)
+  "Bet actions menu for GAME."
   (let* ((read-answer-short t))
     (read-answer "Game Action "
                  '(("deal" ?d "deal new hand")
@@ -461,6 +507,87 @@
                    ("options" ?o "change game options")
                    ("quit" ?q "quit blackjack")
                    ("help" ?? "show help")))))
+
+(defun bj-ask-new-bet (game)
+  "Update the current GAME bet."
+  (let* ((answer (bj-new-bet-menu game)))
+    (message "new bet answer: %s" answer)
+    (setf (slot-value game 'current-bet) (string-to-number answer))))
+
+(defun bj-new-bet-menu (game)
+  "New GAME bet menu."
+  (read-string "New Bet "))
+
+(defun bj-ask-new-number-decks (game)
+  "Ask for new number of GAME decks."
+  ;; TODO
+  )
+
+(defun bj-ask-game-options (game)
+  "Ask about which GAME option to update."
+  (let* ((answer (bj-game-options-menu game)))
+    (message "game options answer: %s" answer)
+    (pcase answer
+      ("number-decks" (bj-ask-new-number-decks game))
+      ("deck-type" (bj-ask-new-deck-type game))
+      ("face-type" (bj-ask-new-face-type game))
+      ("back" (bj-ask-bet-action game)))))
+
+(defun bj-game-options-menu (game)
+  "GAME options menu."
+  (let* ((read-answer-short t))
+    (read-answer "Game Option "
+                 '(("number-decks" ?n "change number of decks")
+                   ("deck-type" ?t "change the deck type")
+                   ("face-type" ?f "change the card face type")
+                   ("back" ?b "go back to previous menu")
+                   ("help" ?? "show help")))))
+
+
+(defun bj-ask-new-deck-type (game)
+  "Ask for new GAME deck type."
+   (let* ((answer (bj-deck-type-menu game)))
+    (message "deck type answer: %s" answer)
+    (pcase answer
+      ("regular" (bj-shuffle game 'regular))
+      ("aces" (bj-shuffle game 'aces))
+      ("jacks" (bj-shuffle game 'jacks))
+      ("aces-jacks" (bj-shuffle game 'aces-jacks))
+      ("sevens" (bj-shuffle game 'sevens))
+      ("eights" (bj-shuffle game 'eights)))))
+
+(defun bj-deck-type-menu (game)
+  "New GAME deck type menu."
+  (let* ((read-answer-short t))
+    (read-answer "New Deck Type "
+                 '(("regular" ?1 "regular deck")
+		   ("aces" ?2 "deck of aces")
+		   ("jacks" ?3 "deck of jacks")
+		   ("aces-jacks" ?4 "deck of aces and jacks")
+		   ("sevens" ?5 "deck of sevens")
+		   ("eights" ?6 "deck of eights")
+                   ("help" ?? "show help")))))
+
+(defun bj-ask-new-face-type (game)
+  "Ask for new GAME face type."
+  (let* ((answer (bj-face-type-menu game)))
+    (message "face type answer: %s" answer)
+    (pcase answer
+      ("ascii" (bj-set-face-type game 'ascii))
+      ("unicode" (bj-set-face-type game 'unicode)))))
+
+(defun bj-face-type-menu (game)
+  "New GAME face type menu."
+  (let* ((read-answer-short t))
+    (read-answer "New Face Type "
+                 '(("ascii" ?a "use ascii face type")
+		   ("unicode" ?u "use unicode face type")
+                   ("help" ?? "show help")))))
+
+(defun bj-set-face-type (game type)
+  "Set GAME face TYPE."
+  ;; TODO
+  )
 
 (defun bj-player-hand-is-busted (cards)
   "Return non-nil if CARDS value is more than 21."
@@ -573,7 +700,11 @@
 
 (defun bj-card-face (game value suit)
   "Return GAME card face based on VALUE and SUIT."
-  (aref (aref (slot-value game 'faces) value) suit))
+  (let* ((face nil))
+    (if (eq (slot-value game 'face-type) 'unicode)
+	(setq face (slot-value game 'faces-unicode))
+      (setq face (slot-value game 'faces-ascii)))
+    (aref (aref face value) suit)))
 
 (defun bj-is-ace (card)
   "Is the CARD an ace?"
