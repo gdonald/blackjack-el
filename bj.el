@@ -134,7 +134,7 @@
 	 (bj-hand-is-blackjack (slot-value player-hand 'cards)))
         (progn
           (bj-draw-hands game)
-	  (bj-ask-insurance))
+	  (bj-ask-insurance-action game))
       (if (bj-player-hand-done game player-hand)
           (progn
 	    (setf (slot-value dealer-hand 'hide-down-card) nil)
@@ -288,8 +288,7 @@
 
 (defun bj-format-money (money)
   "Format MONEY."
-  ;; TODO
-  money)
+  (format "%.2f" money))
 
 (defun bj-more-hands-to-play (game)
   "Are there more GAME hands to play?"
@@ -390,9 +389,34 @@
 
 (defun bj-split (game)
   "Split the current GAME player hand."
-  (let* ((player-hand (bj-current-player-hand game))
-	 (cards (slot-value player-hand 'cards)))
-    ;; TODO
+  (let* ((player-hands (slot-value game 'player-hands))
+	 (current-hand (slot-value game 'current-player-hand))
+	 (player-hand (bj-current-player-hand game))
+	 (cards (slot-value player-hand 'cards))
+	 (split-card (nth 1 cards))
+	 (split-hand (bj-player-hand :bet (slot-value game 'current-bet)))
+	 (x 0))
+
+    (push split-hand player-hands)
+
+    (setf x (1- (length player-hands)))
+    (while (> x current-hand)
+      
+      (setf x (1- x))
+      )
+    
+    ;; x = player_hands.size - 1
+    ;; while x > current_hand
+    ;;   player_hands[x] = player_hands[x - 1].clone
+    ;;   x -= 1
+    ;; end
+    
+    (push split-card (slot-value split-hand 'cards))
+
+    (setf (slot-value player-hand 'cards) (cl-remove split-card cards :count 1))
+    (bj-deal-card game player-hand)
+    
+    
     ))
 
 (defun bj-can-hit (game)
@@ -480,8 +504,48 @@
         (setf actions (cons '("double" ?d "deal a new card and end hand") actions)))
     (read-answer "Hand Action " actions)))
 
-(defun bj-ask-insurance ()
-  "Ask about insuring hand."
+(defun bj-ask-insurance-actions (game)
+  "Ask about insuring GAME hand."
+  (let* ((answer (bj-ask-insurance-menu game)))
+    (message "insurance action answer: %s" answer)
+    (pcase answer
+      ("yes" (bj-insure-hand game))
+      ("no" (bj-no-insurance game))
+      ("help" ?? "show help"))))
+
+(defun bj-insure-hand (game)
+  "Insure GAME hand."
+  (let* ((player-hand (bj-current-player-hand game))
+	 (bet (slot-value player-hand 'bet))
+	 (new-bet (/ bet 2))
+	 (money (slot-value game 'money)))
+    (setf (slot-value player-hand 'bet) new-bet
+	  (slot-value player-hand 'played) t
+	  (slot-value player-hand 'payed) t
+	  (slot-value player-hand 'status) 'lost
+	  (slot-value game 'money) (- money new-bet))
+    (bj-draw-hands game)
+    (bj-ask-bet-action game)))
+
+(defun bj-no-insurance (game)
+  "Decline GAME hand insurance."
+  (let* ((dealer-hand (slot-value game 'dealer-hand))
+	 (dealer-hand-cards (slot-value dealer-hand 'cards)))
+    (if (bj-hand-is-blackjack dealer-hand-cards)
+	(progn
+	  (setf (slot-value dealer-hand 'hide-down-card) nil)
+	  (bj-pay-hands game)
+	  (bj-draw-hands game)
+	  (bj-ask-bet-action game))
+      (let* ((player-hand (bj-current-player-hand game)))
+	(if (bj-player-hand-done game player-hand)
+	    (bj-play-dealer-hand game)
+	  (progn
+	    (bj-draw-hands game)
+	    (bj-ask-hand-action game)))))))
+
+(defun bj-ask-insurance-menu (game)
+  "Ask about insuring GAME hand."
   (let* ((read-answer-short t))
     (read-answer "Insurance "
                  '(("yes" ?y "insure hand")
@@ -510,9 +574,26 @@
 
 (defun bj-ask-new-bet (game)
   "Update the current GAME bet."
-  (let* ((answer (bj-new-bet-menu game)))
+  (let* ((answer (bj-new-bet-menu game))
+	 (bet 0))
     (message "new bet answer: %s" answer)
-    (setf (slot-value game 'current-bet) (string-to-number answer))))
+    (setf bet (string-to-number answer))
+    (setf (slot-value game 'current-bet) bet)
+    (bj-normalize-current-bet game)))
+
+(defun bj-normalize-current-bet (game)
+  "Normalize current GAME bet."
+  (let* ((min-bet (slot-value game 'min-bet))
+	 (max-bet (slot-value game 'max-bet))
+	 (current-bet (slot-value game 'current-bet))
+	 (money (slot-value game 'money)))
+    (if (< current-bet min-bet)
+	(setf current-bet min-bet))
+    (if (> current-bet max-bet)
+	(setf current-bet max-bet))
+    (if (> current-bet money)
+	(setf current-bet money))
+    (setf (slot-value game 'current-bet) current-bet)))
 
 (defun bj-new-bet-menu (game)
   "New GAME bet menu."
@@ -520,8 +601,19 @@
 
 (defun bj-ask-new-number-decks (game)
   "Ask for new number of GAME decks."
-  ;; TODO
-  )
+  (let* ((answer (bj-new-number-decks-menu game))
+	 (num-decks 1))
+    (message "new number of decks answer: %s" answer)
+    (setf num-decks (string-to-number answer))
+    (if (< num-decks 1)
+	(setf num-decks 1))
+    (if (> num-decks 8)
+	(setf num-decks 8))
+    (setf (slot-value game 'number-decks) num-decks)))
+
+(defun bj-new-number-decks-menu (game)
+  "New GAME number of decks menu."
+  (read-string "New Number of Decks "))
 
 (defun bj-ask-game-options (game)
   "Ask about which GAME option to update."
@@ -586,8 +678,7 @@
 
 (defun bj-set-face-type (game type)
   "Set GAME face TYPE."
-  ;; TODO
-  )
+  (setf (slot-value game 'face-type) type))
 
 (defun bj-player-hand-is-busted (cards)
   "Return non-nil if CARDS value is more than 21."
@@ -727,27 +818,47 @@
     (if (> current-bet money)
 	(setf current-bet money))))
 
+(defun bj-load-saved-game (game)
+  "Load persisted GAME state."
+  (let* ((content nil)
+	 (parts '()))
+    (ignore-errors
+      (with-temp-buffer
+	(insert-file-contents "bj.txt")
+	(setf content (buffer-string))))
+    (if (not (eq content nil))
+	(setf parts (split-string content "|")))
+    (if (= (length parts) 5)
+	(progn
+	  (setf (slot-value game 'num-decks) (string-to-number (nth 0 parts))
+		(slot-value game 'deck-type) (intern (nth 1 parts))
+		(slot-value game 'face-type) (intern (nth 2 parts))
+		(slot-value game 'money) (string-to-number (nth 3 parts))
+		(slot-value game 'current-bet) (string-to-number (nth 4 parts)))))))
+
 (defun bj-save (game)
   "Persist GAME state."
-  ;; TODO
-  )
-
-
-(defun bj-quit ()
-  "Quit."
-  ;; TODO
-  )
+  (ignore-errors
+    (with-temp-file "bj.txt"
+      (insert (format "%s|%s|%s|%s|%s"
+		      (slot-value game 'num-decks)
+		      (slot-value game 'deck-type)
+		      (slot-value game 'face-type)
+		      (slot-value game 'money)
+		      (slot-value game 'current-bet))))))
 
 (defun bj ()
   "Run Blackjack."
   (interactive)
   (let* ((debug-on-error t))
-    (let* ((buffer-name "bj") (game (bj-game)))
+    (let* ((buffer-name "blackjack")
+	   (game (bj-game)))
       (get-buffer-create buffer-name)
       (switch-to-buffer buffer-name)
       (with-current-buffer buffer-name
 	(while (not (slot-value game 'quitting))
-	  (bj-deal-new-hand game))))))
+	  (bj-deal-new-hand game))))
+    (quit-window)))
 
 (provide 'bj)
 ;;; bj.el ends here
