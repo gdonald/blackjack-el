@@ -1,32 +1,32 @@
-## bj-el - Elisp Blackjack
+## blackjack-el - Blackjack written in Elisp
 
 Play Blackjack in Emacs.
 
 ### Install
 
-Load the `bj.el` file in your .emacs or init.el:
+Load the `blackjack.el` file in your .emacs or init.el:
 
-    (load "~/path/to/bj.el")
+    (load "~/path/to/blackjack.el")
 
 ### Run it:
 
-    M-x bj
+    M-x blackjack
 
-If you run out of money, delete bj.txt.
+If you run out of money, delete blackjack.txt.
 
 ### Screenshots:
 
-![Blackjack](https://raw.githubusercontent.com/gdonald/bj-el/main/ss1.png)
+![Blackjack](https://raw.githubusercontent.com/gdonald/blackjack-el/main/ss1.png)
 
-![Blackjack](https://raw.githubusercontent.com/gdonald/bj-el/main/ss2.png)
+![Blackjack](https://raw.githubusercontent.com/gdonald/blackjack-el/main/ss2.png)
 
 ### Bugs / Issues / Feature Requests 
 
-[https://github.com/gdonald/bj-el/issues](https://github.com/gdonald/bj-el/issues)
+[https://github.com/gdonald/blackjack-el/issues](https://github.com/gdonald/blackjack-el/issues)
 
 ### License
 
-[![GitHub](https://img.shields.io/github/license/gdonald/bj-el?color=aa0000)](https://github.com/gdonald/bj-el/blob/main/LICENSE)
+[![GitHub](https://img.shields.io/github/license/gdonald/blackjack-el?color=aa0000)](https://github.com/gdonald/blackjack-el/blob/main/LICENSE)
 
 ### Alternative Implementations:
 
