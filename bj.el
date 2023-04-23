@@ -122,19 +122,15 @@
   (let* ((shoe (slot-value game 'shoe))
 	 (player-hand nil)
 	 (dealer-hand nil))
-
     (setf (slot-value game 'player-hands) '())
     (setf player-hand (bj-player-hand :id (bj-next-id game) :bet (slot-value game 'current-bet)))
     (setf dealer-hand (bj-dealer-hand))
-
     (dotimes (x 2)
       (bj-deal-card game player-hand)
       (bj-deal-card game dealer-hand))
-
     (push player-hand (slot-value game 'player-hands))
     (setf (slot-value game 'current-player-hand) 0)
     (setf (slot-value game 'dealer-hand) dealer-hand)
-
     (if (and
 	 (bj-dealer-upcard-is-ace dealer-hand)
 	 (not (bj-hand-is-blackjack (slot-value player-hand 'cards))))
@@ -213,8 +209,7 @@
 
 (defun bj-player-hand-won (player-hand-value dealer-hand-value dealer-hand-busted)
   "Return non-nil if PLAYER-HAND-VALUE > DEALER-HAND-VALUE && !DEALER-HAND-BUSTED."
-  (if
-      (or
+  (if (or
        dealer-hand-busted
        (> player-hand-value dealer-hand-value))
       t))
@@ -225,8 +220,7 @@
       nil
     (progn
       (setf (slot-value player-hand 'played) t)
-      (if
-          (and
+      (if (and
            (not (slot-value player-hand 'payed))
            (bj-player-hand-is-busted (slot-value player-hand 'cards)))
           (bj-collect-busted-hand game player-hand))
@@ -308,9 +302,7 @@
   (insert "\n\n  Player $")
   (insert (bj-format-money (/ (slot-value game 'money) 100)))
   (insert ":\n")
-  (bj-draw-player-hands game)
-  ;(insert "\n\n  ")
-  )
+  (bj-draw-player-hands game))
 
 (defun bj-format-money (money)
   "Format MONEY."
@@ -338,11 +330,9 @@
   "Do player hands require playing the GAME dealer hand?"
   (let* ((player-hands (slot-value game 'player-hands)))
     (cl-dolist (player-hand player-hands)
-      (when
-	  (not
-	   (or
-	    (bj-player-hand-is-busted (slot-value player-hand 'cards))
-	    (bj-hand-is-blackjack (slot-value player-hand 'cards))))
+      (when (not (or
+		  (bj-player-hand-is-busted (slot-value player-hand 'cards))
+		  (bj-hand-is-blackjack (slot-value player-hand 'cards))))
 	(cl-return t)))))
 
 (defun bj-dealer-hand-counts (dealer-hand)
@@ -423,40 +413,22 @@
 	 (card nil)
 	 (hand nil)
 	 (x 0))
-
-    ;; Add new hand on end of player-hands list
     (setf hand (bj-player-hand :id (bj-next-id game) :bet (slot-value game 'current-bet)))
     (add-to-list 'player-hands hand :append)
     (setf (slot-value game 'player-hands) player-hands)
-    
-    ;; Move cards in hands (only hands after the current hand)
-    ;; down.  This effectivly clears the cards from the hand
-    ;; after the current hand, so we can split to it.
     (setf x (1- (length player-hands)))
     (while (> x (slot-value game 'current-player-hand))
       (setf player-hand (nth (1- x) player-hands))
       (setf hand (nth x player-hands))
       (setf (slot-value hand 'cards) (slot-value player-hand 'cards))
       (setf x (1- x)))
-
-    ;; get new hand references
     (setf player-hand (nth (slot-value game 'current-player-hand) player-hands))
     (setf hand (nth (1+ (slot-value game 'current-player-hand)) player-hands))
-
-    ;; clear split hand cards
     (setf (slot-value hand 'cards) '())
-    
-    ;; copy second card from current hand into empty split hand
     (setf card (nth 1 (slot-value player-hand 'cards)))
     (push card (slot-value hand 'cards))
-
-    ;; remove second card from current hand
     (setf (slot-value player-hand 'cards) (cl-remove card (slot-value player-hand 'cards) :count 1))
-
-    ;; deal new card into current hand that was split
     (bj-deal-card game player-hand)
-    
-    ;; try to process
     (if (bj-player-hand-done game player-hand)
 	(bj-process game)
       (progn
@@ -662,7 +634,6 @@
                    ("back" ?b "go back to previous menu")
                    ("help" ?? "show help")))))
 
-
 (defun bj-ask-new-deck-type (game)
   "Ask for new GAME deck type."
   (let* ((answer (bj-deck-type-menu game))
@@ -718,8 +689,7 @@
 	  (bj-is-ten card-1))
 	 (and
 	  (bj-is-ace card-1)
-	  (bj-is-ten card-0)))
-	)))
+	  (bj-is-ten card-0))))))
 
 (defun bj-dealer-upcard-is-ace (dealer-hand)
   "Return non-nil if DEALER-HAND upcard is an ace."
