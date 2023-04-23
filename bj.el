@@ -173,27 +173,26 @@
   (if (not (slot-value player-hand 'payed))
       (progn
         (setf (slot-value player-hand 'payed) t)
-        (let* ((player-hand-value nil)
-	       (money (slot-value game 'money)))
+        (let* ((player-hand-value nil))
           (setf player-hand-value (bj-player-hand-value (slot-value player-hand 'cards) 'soft))
           (if (bj-player-hand-won player-hand-value dealer-hand-value dealer-hand-busted)
-	      (bj-pay-won-hand money player-hand)
+	      (bj-pay-won-hand game player-hand)
 	    (if (bj-player-hand-lost player-hand-value dealer-hand-value)
-                (bj-collect-lost-hand money player-hand)
+                (bj-collect-lost-hand game player-hand)
 	      (setf (slot-value player-hand 'status) 'push)))))))
 
-(defun bj-collect-lost-hand (money player-hand)
-  "Collect bet into MONEY from losing PLAYER-HAND."
-  (setf money (- money (slot-value player-hand 'bet)))
-  (setf (slot-value player-hand 'status) 'lost))
+(defun bj-collect-lost-hand (game player-hand)
+  "Collect bet into GAME money from losing PLAYER-HAND."
+  (setf (slot-value game 'money) (- (slot-value game 'money) (slot-value player-hand 'bet))
+	(slot-value player-hand 'status) 'lost))
 
-(defun bj-pay-won-hand (money player-hand)
-  "Pay winning PLAYER-HAND bet into MONEY."
+(defun bj-pay-won-hand (game player-hand)
+  "Pay winning PLAYER-HAND bet into GAME money."
   (let* ((bet (slot-value player-hand 'bet)))
     (if (bj-hand-is-blackjack (slot-value player-hand 'cards))
 	(setf bet (* 1.5 bet)))
-    (setf money (+ money bet))
-    (setf (slot-value player-hand 'status) 'won)))
+    (setf (slot-value game 'money) (+ (slot-value game 'money) bet)
+	  (slot-value player-hand 'status) 'won)))
 
 (defun bj-player-hand-lost (player-hand-value dealer-hand-value)
   "Return non-nil if PLAYER-HAND-VALUE < DEALER-HAND-VALUE."
@@ -403,7 +402,7 @@
     ;; down.  This effectivly clears the cards from the hand
     ;; after the current hand, so we can split to it.
     (setf x (1- (length player-hands)))
-    (while (> x current-hand)
+    (while (> x (slot-value game 'current-player-hand))
       (setf player-hand (nth x player-hands))
       (setf hand (nth (1- x) player-hands))
       (setf (slot-value player-hand 'cards) (slot-value hand 'cards))
