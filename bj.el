@@ -281,7 +281,7 @@
   (insert "\n  Dealer:\n")
   (bj-draw-dealer-hand game)
   (insert "\n\n  Player $")
-  (insert (format "%d" (bj-format-money (/ (slot-value game 'money) 100))))
+  (insert (bj-format-money (/ (slot-value game 'money) 100)))
   (insert ":\n")
   (bj-draw-player-hands game)
   (insert "\n\n  "))
@@ -390,34 +390,38 @@
 (defun bj-split (game)
   "Split the current GAME player hand."
   (let* ((player-hands (slot-value game 'player-hands))
-	 (current-hand (slot-value game 'current-player-hand))
-	 (player-hand (bj-current-player-hand game))
-	 (cards (slot-value player-hand 'cards))
-	 (split-card (nth 1 cards))
-	 (split-hand (bj-player-hand :bet (slot-value game 'current-bet)))
+	 (player-hand nil)
+	 (card nil)
+	 (hand nil)
 	 (x 0))
 
-    (push split-hand player-hands)
+    ;; Add new hand on end of player-hands list
+    (setf hand (bj-player-hand :bet (slot-value game 'current-bet)))
+    (add-to-list 'player-hands hand :append)
 
+    ;; Move cards in hands (only hands after the current hand)
+    ;; down.  This effectivly clears the cards from the hand
+    ;; after the current hand, so we can split to it.
     (setf x (1- (length player-hands)))
     (while (> x current-hand)
-      
-      (setf x (1- x))
-      )
-    
-    ;; x = player_hands.size - 1
-    ;; while x > current_hand
-    ;;   player_hands[x] = player_hands[x - 1].clone
-    ;;   x -= 1
-    ;; end
-    
-    (push split-card (slot-value split-hand 'cards))
+      (setf player-hand (nth x player-hands))
+      (setf hand (nth (1- x) player-hands))
+      (setf (slot-value player-hand 'cards) (slot-value hand 'cards))
+      (setf x (1- x)))
 
-    (setf (slot-value player-hand 'cards) (cl-remove split-card cards :count 1))
-    (bj-deal-card game player-hand)
-    
-    
-    ))
+    ;; get new hand references
+    (setf player-hand (nth (slot-value game 'current-player-hand) player-hands))
+    (setf hand (nth (1+ (slot-value game 'current-player-hand)) player-hands))
+
+    ;; copy second card from current hand to empty split hand
+    (setf card (nth 1 (slot-value player-hand 'cards)))
+    (push card (slot-value hand 'cards))
+
+    ;; remove second card from current hand
+    (setf (slot-value player-hand 'cards) (cl-remove card (slot-value player-hand 'cards) :count 1))
+
+    ;; deal new card into current hand that was split
+    (bj-deal-card game player-hand)))
 
 (defun bj-can-hit (game)
   "Return non-nil if the current GAME player hand can hit."
