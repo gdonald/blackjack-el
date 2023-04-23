@@ -1,4 +1,5 @@
 ;;; blackjack.el --- The game of Blackjack
+;; -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2022 Greg Donald
 
