@@ -221,10 +221,10 @@
 
 (defun bj-collect-busted-hand (game player-hand)
   "Collect bet from GAME PLAYER-HAND."
-  (let* ((money (slot-value game 'money)))
-    (setf (slot-value player-hand 'payed) t)
-    (setf (slot-value player-hand 'status) t)
-    (setf money (- money (slot-value player-hand 'bet)))))
+  (setf (slot-value player-hand 'payed) t
+	(slot-value player-hand 'status) t
+	(slot-value game 'money) (- (slot-value game 'money)
+				    (slot-value player-hand 'bet))))
 
 (defun bj-no-more-actions (player-hand)
   "Return non-nil when PLAYER-HAND has no more actions."
@@ -507,7 +507,7 @@
         (setf actions (cons '("double" ?d "deal a new card and end hand") actions)))
     (read-answer "Hand Action " actions)))
 
-(defun bj-ask-insurance-actions (game)
+(defun bj-ask-insurance-action (game)
   "Ask about insuring GAME hand."
   (let* ((answer (bj-ask-insurance-menu game)))
     (message "insurance action answer: %s" answer)
@@ -583,20 +583,6 @@
     (setf bet (string-to-number answer))
     (setf (slot-value game 'current-bet) bet)
     (bj-normalize-current-bet game)))
-
-(defun bj-normalize-current-bet (game)
-  "Normalize current GAME bet."
-  (let* ((min-bet (slot-value game 'min-bet))
-	 (max-bet (slot-value game 'max-bet))
-	 (current-bet (slot-value game 'current-bet))
-	 (money (slot-value game 'money)))
-    (if (< current-bet min-bet)
-	(setf current-bet min-bet))
-    (if (> current-bet max-bet)
-	(setf current-bet max-bet))
-    (if (> current-bet money)
-	(setf current-bet money))
-    (setf (slot-value game 'current-bet) current-bet)))
 
 (defun bj-new-bet-menu (game)
   "New GAME bet menu."
@@ -809,17 +795,18 @@
   (> 8 (slot-value card 'value)))
 
 (defun bj-normalize-current-bet (game)
-  "Normalize GAME current bet to a known range and available funds."
-  (let* ((current-bet (slot-value game 'current-bet))
-	 (min-bet (slot-value game 'min-bet))
+  "Normalize current GAME bet."
+  (let* ((min-bet (slot-value game 'min-bet))
 	 (max-bet (slot-value game 'max-bet))
+	 (current-bet (slot-value game 'current-bet))
 	 (money (slot-value game 'money)))
     (if (< current-bet min-bet)
-	(setf current-bet min-bet)
-      (if (> current-bet max-bet)
-	  (setf current-bet max-bet)))
+	(setf current-bet min-bet))
+    (if (> current-bet max-bet)
+	(setf current-bet max-bet))
     (if (> current-bet money)
-	(setf current-bet money))))
+	(setf current-bet money))
+    (setf (slot-value game 'current-bet) current-bet)))
 
 (defun bj-load-saved-game (game)
   "Load persisted GAME state."
