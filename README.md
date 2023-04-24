@@ -12,7 +12,7 @@ Load the `blackjack.el` file in your .emacs or init.el:
 
     M-x blackjack
 
-If you run out of money, delete blackjack.txt.
+If you run out of money, delete `blackjack.txt`.
 
 ### Screenshots:
 
