@@ -845,7 +845,7 @@
   (let* ((money (slot-value blackjack--game 'money))
 	 (menu (slot-value blackjack--game 'current-menu))
 	 (out ""))
-    (setf out (format "Blackjack $%s  " (blackjack--format-money (truncate (/ money 100)))))
+    (setf out (format "  Blackjack $%s  " (blackjack--format-money (truncate (/ money 100)))))
     (setf out (concat out
 		      (pcase menu
 			('game (blackjack--game-menu))
@@ -1081,7 +1081,7 @@
 
 (define-minor-mode blackjack-minor-mode
   "Blackjack minor mode."
-  :lighter "blackjack")
+  :lighter " blackjack")
 
 (define-derived-mode blackjack-mode fundamental-mode "Blackjack"
   "Blackjack game mode."
