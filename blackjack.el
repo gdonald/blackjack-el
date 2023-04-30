@@ -932,18 +932,6 @@
     (setf (slot-value blackjack--game 'current-menu) 'game)
     (blackjack--deal-new-hand)))
 
-(defun blackjack--show-deck-type-menu ()
-  "Switch to deck type menu."
-  (interactive)
-  (setf (slot-value blackjack--game 'current-menu) 'deck-type)
-  (blackjack--update-header))
-
-(defun blackjack--show-face-type-menu ()
-  "Switch to face type menu."
-  (interactive)
-  (setf (slot-value blackjack--game 'current-menu) 'face-type)
-  (blackjack--update-header))
-
 (defun blackjack--show-game-menu ()
   "Switch to game menu."
   (interactive)
@@ -974,53 +962,29 @@
     (if (eq (slot-value blackjack--game 'current-menu) 'options)
         (blackjack--show-game-menu))))
 
-(defun blackjack--deck-type-regular ()
-  "Set deck type to regular."
-  (interactive)
-  (setf (slot-value blackjack--game 'deck-type) 'regular)
-  (blackjack--shuffle-save-deal-new-hand))
+(dolist (deck-type '(regular aces jacks aces-jacks sevens eights))
+  (let ((func-name (intern (format "blackjack--deck-type-%s" deck-type))))
+    (fset func-name
+          (lambda ()
+            (interactive)
+            (setf (slot-value blackjack--game 'deck-type) deck-type)
+            (blackjack--shuffle-save-deal-new-hand)))))
 
-(defun blackjack--deck-type-aces ()
-  "Set deck type to aces."
-  (interactive)
-  (setf (slot-value blackjack--game 'deck-type) 'aces)
-  (blackjack--shuffle-save-deal-new-hand))
+(dolist (face-type '(alternate regular))
+  (let ((func-name (intern (format "blackjack--face-type-%s" face-type))))
+    (fset func-name
+          (lambda ()
+            (interactive)
+            (setf (slot-value blackjack--game 'face-type) face-type)
+            (blackjack--save-deal-new-hand)))))
 
-(defun blackjack--deck-type-jacks ()
-  "Set deck type to jacks."
-  (interactive)
-  (setf (slot-value blackjack--game 'deck-type) 'jacks)
-  (blackjack--shuffle-save-deal-new-hand))
-
-(defun blackjack--deck-type-aces-jacks ()
-  "Set deck type to aces-jacks."
-  (interactive)
-  (setf (slot-value blackjack--game 'deck-type) 'aces-jacks)
-  (blackjack--shuffle-save-deal-new-hand))
-
-(defun blackjack--deck-type-sevens ()
-  "Set deck type to sevens."
-  (interactive)
-  (setf (slot-value blackjack--game 'deck-type) 'sevens)
-  (blackjack--shuffle-save-deal-new-hand))
-
-(defun blackjack--deck-type-eights ()
-  "Set deck type to eights."
-  (interactive)
-  (setf (slot-value blackjack--game 'deck-type) 'eights)
-  (blackjack--shuffle-save-deal-new-hand))
-
-(defun blackjack--face-type-alternate ()
-  "Set face type to alternate."
-  (interactive)
-  (setf (slot-value blackjack--game 'face-type) 'alternate)
-  (blackjack--save-deal-new-hand))
-
-(defun blackjack--face-type-regular ()
-  "Set face type to regular."
-  (interactive)
-  (setf (slot-value blackjack--game 'face-type) 'regular)
-  (blackjack--save-deal-new-hand))
+(dolist (menu '(deck-type face-type))
+  (let ((func-name (intern (format "blackjack--show-%s-menu" menu))))
+    (fset func-name
+          (lambda ()
+            (interactive)
+            (setf (slot-value blackjack--game 'current-menu) menu)
+            (blackjack--update-header)))))
 
 (defun blackjack--save-deal-new-hand ()
   "Save, deal new hand."
