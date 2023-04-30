@@ -207,8 +207,7 @@
   (interactive)
   (if (blackjack--need-to-shuffle-p)
       (blackjack--shuffle))
-  (let ((player-hand nil)
-        (dealer-hand nil))
+  (let (player-hand dealer-hand)
     (setf (slot-value blackjack--game 'player-hands) '())
     (setq player-hand (blackjack-player-hand :id (blackjack--next-id) :bet (slot-value blackjack--game 'current-bet)))
     (setq dealer-hand (blackjack-dealer-hand))
@@ -239,7 +238,7 @@
   (interactive)
   (let ((shoe (slot-value blackjack--game 'shoe))
         (cards (slot-value hand 'cards))
-        (card nil))
+        (card))
     (setq card (car shoe))
     (setq cards (reverse cards))
     (push card cards)
@@ -269,7 +268,7 @@
   (if (not (slot-value player-hand 'payed))
       (progn
         (setf (slot-value player-hand 'payed) t)
-        (let ((player-hand-value nil))
+        (let (player-hand-value)
           (setq player-hand-value (blackjack--player-hand-value (slot-value player-hand 'cards) 'soft))
           (if (blackjack--player-hand-won player-hand-value dealer-hand-value dealer-hand-busted)
               (blackjack--pay-won-hand player-hand)
@@ -403,7 +402,7 @@
 
 (defun blackjack--play-more-hands ()
   "Advance to next GAME player hand."
-  (let ((player-hand nil))
+  (let (player-hand)
     (setf (slot-value blackjack--game 'current-player-hand) (1+ (slot-value blackjack--game 'current-player-hand)))
     (setq player-hand (blackjack--current-player-hand))
     (blackjack--deal-card player-hand)
@@ -500,10 +499,7 @@
   (interactive)
   (if (blackjack--valid-hand-action-p 'split)
       (let ((player-hands (slot-value blackjack--game 'player-hands))
-            (player-hand nil)
-            (card nil)
-            (hand nil)
-            (x 0))
+            (player-hand) (card) (hand) (x 0))
         (setq hand (blackjack-player-hand :id (blackjack--next-id) :bet (slot-value blackjack--game 'current-bet)))
         (setq player-hands (reverse player-hands))
         (push hand player-hands)
@@ -651,9 +647,7 @@
   (let* ((dealer-hand (slot-value blackjack--game 'dealer-hand))
          (cards (slot-value dealer-hand 'cards))
          (hide-down-card (slot-value dealer-hand 'hide-down-card))
-         (card nil)
-         (suit nil)
-         (value nil))
+         (card) (suit) (value))
     (insert "  ")
     (dotimes (x (length cards))
       (setq card (nth x cards))
@@ -672,8 +666,7 @@
   "Calculates DEALER-HAND cards total value based on COUNT-METHOD."
   (let ((cards (slot-value dealer-hand 'cards))
         (hide-down-card (slot-value dealer-hand 'hide-down-card))
-        (total 0)
-        (card nil))
+        (total 0) (card))
     (dotimes (x (length cards))
       (if (not (and hide-down-card (= x 0)))
           (progn
@@ -686,7 +679,7 @@
 (defun blackjack--draw-player-hands ()
   "Draw GAME players hands."
   (let ((player-hands (slot-value blackjack--game 'player-hands))
-        (player-hand nil))
+        (player-hand))
     (dotimes (x (length player-hands))
       (setq player-hand (nth x player-hands))
       (blackjack--draw-player-hand player-hand x))))
@@ -701,10 +694,7 @@
 (defun blackjack--player-hand-cards (player-hand)
   "Draw GAME PLAYER-HAND cards."
   (let ((cards (slot-value player-hand 'cards))
-        (card nil)
-        (suit nil)
-        (value nil)
-        (out "  "))
+        (card) (suit) (value) (out "  "))
     (dotimes (x (length cards))
       (setq card (nth x cards))
       (setq value (slot-value card 'value))
@@ -750,8 +740,7 @@
 
 (defun blackjack--player-hand-value (cards count-method)
   "Calculates CARDS total value based on COUNT-METHOD."
-  (let ((total 0)
-        (card nil))
+  (let ((total 0) (card))
     (dotimes (x (length cards))
       (setq card (nth x cards))
       (setq total (+ total (blackjack--card-val card count-method total))))
@@ -770,7 +759,7 @@
 
 (defun blackjack--card-face (value suit)
   "Return GAME card face based on VALUE and SUIT."
-  (let ((face nil))
+  (let (face)
     (if (eq (slot-value blackjack--game 'face-type) 'alternate)
         (setq face (slot-value blackjack--game 'faces-alternate))
       (setq face (slot-value blackjack--game 'faces-regular)))
@@ -800,8 +789,7 @@
 
 (defun blackjack--load-saved-game ()
   "Load persisted GAME state."
-  (let ((content nil)
-        (parts '()))
+  (let (content parts)
     (ignore-errors
       (with-temp-buffer
         (insert-file-contents "blackjack.txt")
