@@ -230,10 +230,9 @@
             (blackjack--pay-hands)
             (setf (slot-value blackjack--game 'current-menu) 'insurance)
             (blackjack--draw-hands))
-        (progn
-          (setf (slot-value blackjack--game 'current-menu) 'hand)
-          (blackjack--draw-hands)
-          (blackjack--save))))))
+        (setf (slot-value blackjack--game 'current-menu) 'hand)
+        (blackjack--draw-hands)
+        (blackjack--save)))))
 
 (defun blackjack--deal-card (hand)
   "Deal a card into HAND from GAME shoe."
@@ -308,13 +307,12 @@
   "Return non-nil when GAME PLAYER-HAND is done."
   (if (not (blackjack--no-more-actions-p player-hand))
       nil
-    (progn
-      (setf (slot-value player-hand 'played) t)
-      (if (and
-           (not (slot-value player-hand 'payed))
-           (blackjack--player-hand-is-busted-p (slot-value player-hand 'cards)))
-          (blackjack--collect-busted-hand player-hand))
-      t)))
+    (setf (slot-value player-hand 'played) t)
+    (if (and
+         (not (slot-value player-hand 'payed))
+         (blackjack--player-hand-is-busted-p (slot-value player-hand 'cards)))
+        (blackjack--collect-busted-hand player-hand))
+    t))
 
 (defun blackjack--collect-busted-hand (player-hand)
   "Collect bet from GAME PLAYER-HAND."
@@ -411,9 +409,8 @@
     (blackjack--deal-card player-hand)
     (if (blackjack--player-hand-done-p player-hand)
         (blackjack--process)
-      (progn
-        (setf (slot-value blackjack--game 'current-menu) 'hand)
-        (blackjack--draw-hands)))))
+      (setf (slot-value blackjack--game 'current-menu) 'hand)
+      (blackjack--draw-hands))))
 
 (defun blackjack--need-to-play-dealer-hand-p ()
   "Do player hands require playing the GAME dealer hand?"
@@ -475,9 +472,8 @@
         (blackjack--deal-card player-hand)
         (if (blackjack--player-hand-done-p player-hand)
             (blackjack--process)
-          (progn
-            (setf (slot-value blackjack--game 'current-menu) 'hand)
-            (blackjack--draw-hands))))))
+          (setf (slot-value blackjack--game 'current-menu) 'hand)
+          (blackjack--draw-hands)))))
 
 (defun blackjack--double ()
   "Double the current GAME player hand."
@@ -529,9 +525,8 @@
         (blackjack--deal-card player-hand)
         (if (blackjack--player-hand-done-p player-hand)
             (blackjack--process)
-          (progn
-            (setf (slot-value blackjack--game 'current-menu) 'hand)
-            (blackjack--draw-hands))))))
+          (setf (slot-value blackjack--game 'current-menu) 'hand)
+          (blackjack--draw-hands)))))
 
 (defun blackjack--valid-hand-action-p (action)
   "Return non-nil if the ACTION can be performed."
@@ -608,9 +603,8 @@
       (let ((player-hand (blackjack--current-player-hand)))
         (if (blackjack--player-hand-done-p player-hand)
             (blackjack--play-dealer-hand)
-          (progn
-            (setf (slot-value blackjack--game 'current-menu) 'hand)
-            (blackjack--draw-hands)))))))
+          (setf (slot-value blackjack--game 'current-menu) 'hand)
+          (blackjack--draw-hands))))))
 
 (defun blackjack--ask-new-bet ()
   "Update the current GAME bet."
@@ -668,9 +662,8 @@
           (progn
             (setf value 13)
             (setf suit 0))
-        (progn
-          (setf value (slot-value card 'value))
-          (setf suit (slot-value card 'suit))))
+        (setf value (slot-value card 'value))
+        (setf suit (slot-value card 'suit)))
       (insert (blackjack--card-face value suit))
       (insert " "))
     (insert " ⇒  ")
@@ -817,12 +810,11 @@
     (if content
         (setf parts (split-string content "|")))
     (if (= (length parts) 5)
-        (progn
-          (setf (slot-value blackjack--game 'num-decks) (string-to-number (nth 0 parts))
-                (slot-value blackjack--game 'deck-type) (intern (nth 1 parts))
-                (slot-value blackjack--game 'face-type) (intern (nth 2 parts))
-                (slot-value blackjack--game 'money) (string-to-number (nth 3 parts))
-                (slot-value blackjack--game 'current-bet) (string-to-number (nth 4 parts)))))))
+        (setf (slot-value blackjack--game 'num-decks) (string-to-number (nth 0 parts))
+              (slot-value blackjack--game 'deck-type) (intern (nth 1 parts))
+              (slot-value blackjack--game 'face-type) (intern (nth 2 parts))
+              (slot-value blackjack--game 'money) (string-to-number (nth 3 parts))
+              (slot-value blackjack--game 'current-bet) (string-to-number (nth 4 parts))))))
 
 (defun blackjack--save ()
   "Persist GAME state."
