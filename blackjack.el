@@ -227,7 +227,7 @@
           (progn
             (setf (slot-value dealer-hand 'hide-down-card) nil)
             (blackjack--pay-hands)
-            (setf (slot-value blackjack--game 'current-menu) 'insurance)
+            (setf (slot-value blackjack--game 'current-menu) 'game)
             (blackjack--draw-hands))
         (setf (slot-value blackjack--game 'current-menu) 'hand)
         (blackjack--draw-hands)
