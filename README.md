@@ -1,18 +1,33 @@
+[![MELPA](https://melpa.org/packages/blackjack-badge.svg)](https://melpa.org/#/blackjack)
+
 ## blackjack-el - Blackjack written in Elisp
 
 Play Blackjack in Emacs.
 
 ### Install
 
-Load the `blackjack.el` file in your .emacs or init.el:
+#### If you use `use-package`:
+
+Add a new entry in your .emacs or init.el:
+
+    (use-package blackjack
+      :ensure t)
+
+#### For a manual install:
+
+Download and load `blackjack.el` in your .emacs or init.el:
 
     (load "~/path/to/blackjack.el")
 
-### Run it:
+#### Running blackjack:
+
+You can run it like this:
 
     M-x blackjack
 
-If you run out of money, delete `blackjack.txt`.
+#### Going broke:
+
+If you run out of money, delete `blackjack.txt` and restart blackjack.  You will get a free $100 for another try.
 
 ### Screenshots:
 
@@ -20,7 +35,9 @@ If you run out of money, delete `blackjack.txt`.
 
 ![Blackjack](https://raw.githubusercontent.com/gdonald/blackjack-el/main/ss2.png)
 
-### Bugs / Issues / Feature Requests 
+### Bugs / Issues / Feature Requests
+
+Please report any bugs or issues you find:
 
 [https://github.com/gdonald/blackjack-el/issues](https://github.com/gdonald/blackjack-el/issues)
 
