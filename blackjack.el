@@ -3,9 +3,9 @@
 ;; Copyright (C) 2022, 2023 Greg Donald
 ;; SPDX-License-Identifier: GPL-3.0-only
 ;; Author: Greg Donald <gdonald@gmail.com>
-;; Version: 1.0.1
+;; Version: 1.0.3
 ;; Package-Requires: ((emacs "26.2"))
-;; Keywords: games
+;; Keywords: card game games blackjack 21
 ;; URL: https://github.com/gdonald/blackjack-el
 
 ;;; Commentary:

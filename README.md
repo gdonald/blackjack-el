@@ -2,7 +2,7 @@
 
 ## blackjack-el - Blackjack written in Elisp
 
-Play Blackjack in Emacs.
+This package lets you play Blackjack in Emacs.
 
 ### Install
 
