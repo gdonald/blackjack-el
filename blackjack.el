@@ -846,7 +846,7 @@
   (let ((money (slot-value blackjack--game 'money))
         (menu (slot-value blackjack--game 'current-menu))
         (out ""))
-    (setq out (format "  Blackjack $%s  " (blackjack--format-money (truncate (/ money 100)))))
+    (setq out (format "  Blackjack $%s  " (blackjack--format-money (/ money 100.0))))
     (setq out (concat out
                       (pcase menu
                         ('game (blackjack--game-menu))
