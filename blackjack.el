@@ -102,6 +102,11 @@
   "Key to press to choose alternate face type."
   :type '(string) :group 'blackjack)
 
+(defcustom blackjack-persist-file
+  (file-name-concat user-emacs-directory blackjack.txt)
+  "File to persist blackjack game state to."
+  :type '(file) :group 'blackjack)
+
 (defclass blackjack-card ()
   ((id :initarg :id :initform 0 :type integer)
    (value :initarg :value :initform 0 :type integer)
@@ -799,12 +804,16 @@
         (setq current-bet money))
     (setf (slot-value blackjack--game 'current-bet) current-bet)))
 
+(defun blackjack--persist-file-name ()
+  "Resolve the persist file including all abbreviations and symlinks."
+  (file-truename (expand-file-name blackjack-persist-file)))
+
 (defun blackjack--load-saved-game ()
   "Load persisted state."
   (let (content parts)
     (ignore-errors
       (with-temp-buffer
-        (insert-file-contents-literally "blackjack.txt")
+        (insert-file-contents-literally (blackjack--persist-file-name))
         (setq content (buffer-string))))
     (if content
         (setq parts (split-string content "|")))
@@ -818,7 +827,7 @@
 (defun blackjack--save ()
   "Persist state."
   (ignore-errors
-    (with-temp-file "blackjack.txt"
+    (with-temp-file (blackjack--persist-file-name)
       (insert (format "%s|%s|%s|%s|%s"
                       (slot-value blackjack--game 'num-decks)
                       (slot-value blackjack--game 'deck-type)
