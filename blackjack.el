@@ -103,7 +103,7 @@
   :type '(string) :group 'blackjack)
 
 (defcustom blackjack-persist-file
-  (file-name-concat user-emacs-directory blackjack.txt)
+  (file-name-concat user-emacs-directory "blackjack.txt")
   "File to persist blackjack game state to."
   :type '(file) :group 'blackjack)
 
