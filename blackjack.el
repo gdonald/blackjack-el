@@ -804,7 +804,7 @@
   (let (content parts)
     (ignore-errors
       (with-temp-buffer
-        (insert-file-contents "blackjack.txt")
+        (insert-file-contents-literally "blackjack.txt")
         (setq content (buffer-string))))
     (if content
         (setq parts (split-string content "|")))
@@ -1043,7 +1043,10 @@
   "Blackjack minor mode keymap.")
 
 (define-minor-mode blackjack-minor-mode
-  "Blackjack minor mode."
+  "Blackjack minor mode.
+
+\\{blackjack-mode-map}"
+  :group 'blackjack
   :lighter " blackjack")
 
 (define-derived-mode blackjack-mode fundamental-mode "Blackjack"
