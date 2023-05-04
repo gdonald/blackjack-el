@@ -804,7 +804,7 @@
   (let (content parts)
     (ignore-errors
       (with-temp-buffer
-        (insert-file-contents "blackjack.txt")
+        (insert-file-contents-literally "blackjack.txt")
         (setq content (buffer-string))))
     (if content
         (setq parts (split-string content "|")))
