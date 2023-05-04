@@ -1043,7 +1043,10 @@
   "Blackjack minor mode keymap.")
 
 (define-minor-mode blackjack-minor-mode
-  "Blackjack minor mode."
+  "Blackjack minor mode.
+
+\\{blackjack-mode-map}"
+  :group 'blackjack
   :lighter " blackjack")
 
 (define-derived-mode blackjack-mode fundamental-mode "Blackjack"
