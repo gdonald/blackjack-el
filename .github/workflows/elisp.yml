@@ -24,7 +24,7 @@ jobs:
           version: ${{ matrix.emacs_version }}
       - name: Install buttercup
         run: |
-          sudo apt install elpa-buttercup
+          echo buttercup | emacs -batch -f package-initialize -L . -f package-install
       - uses: actions/checkout@v3
       - name: Run a one-line script
         run: ./run-tests
