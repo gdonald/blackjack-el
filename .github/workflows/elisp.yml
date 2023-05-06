@@ -9,9 +9,19 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  test:
+    name: Run tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        emacs_version:
+          - '28.2'
+        os:
+          - ubuntu-latest
     steps:
+      - uses: purcell/setup-emacs@master
+        with:
+          version: ${{ matrix.emacs_version }}
       - uses: actions/checkout@v3
       - name: Run a one-line script
         run: ./run-tests
