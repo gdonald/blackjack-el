@@ -1,0 +1,29 @@
+name: CI
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+jobs:
+  test:
+    name: Run test suite
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        emacs_version:
+          - '28.2'
+        os:
+          - ubuntu-latest
+          - macos-latest
+    steps:
+      - uses: purcell/setup-emacs@master
+        with:
+          version: ${{ matrix.emacs_version }}
+      - name: Install buttercup
+        run: |
+          echo buttercup | emacs -batch -f package-initialize -L . -f package-install
+      - uses: actions/checkout@v3
+      - name: Run tests
+        run: ./run-tests
+
