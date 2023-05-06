@@ -172,7 +172,6 @@
    (current-bet :initarg :current-bet :initform 500 :type integer)
    (current-player-hand :initarg :current-player-hand :initform 0 :type integer)
    (current-menu :initarg :current-menu :initform 'game :type symbol)
-   (quitting :initarg :quitting :initform nil :type boolean)
    (faces-regular :initarg :faces :initform '[["A♠" "A♥" "A♣" "A♦"]
                                               ["2♠" "2♥" "2♣" "2♦"]
                                               ["3♠" "3♥" "3♣" "3♦"]
