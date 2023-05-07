@@ -1065,13 +1065,13 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 (define-minor-mode blackjack-minor-mode
   "Blackjack minor mode.
 
-\\{blackjack-mode-map}"
+\\{blackjack-minor-mode-map}"
   :group 'blackjack
   :lighter " blackjack")
 
-(define-derived-mode blackjack-mode fundamental-mode "Blackjack"
+(define-derived-mode blackjack-mode special-mode "Blackjack"
   "Blackjack game mode."
-  (read-only-mode))
+  :group 'blackjack)
 
 (defun blackjack--init ()
   "Initialize game state."
