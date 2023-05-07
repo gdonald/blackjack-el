@@ -1065,7 +1065,7 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 (define-minor-mode blackjack-minor-mode
   "Blackjack minor mode.
 
-\\{blackjack-mode-map}"
+\\{blackjack-minor-mode-map}"
   :group 'blackjack
   :lighter " blackjack")
 
