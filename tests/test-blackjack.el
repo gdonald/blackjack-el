@@ -147,7 +147,28 @@
                         (expect (length (slot-value (nth 0 player-hands) 'cards)) :to-be 2)
                         (expect (length (slot-value dealer-hand 'cards)) :to-be 2)
                         (expect (length shoe) :to-be 48)
-                        (expect (slot-value blackjack--game 'current-menu) :to-be 'insurance))))
+                        (expect (slot-value blackjack--game 'current-menu) :to-be 'insurance)))
+
+          (describe "player is dealt a blackjack"
+                    (before-all
+                     (setq blackjack--game (blackjack-game :deck-type 'jacks))
+                     (blackjack--shuffle)
+                     (setq shoe (slot-value blackjack--game 'shoe))
+                     (setq card (first shoe))
+                     (setf (slot-value card 'value) 0)
+                     (blackjack--deal-new-hand)
+                     (setq player-hands (slot-value blackjack--game 'player-hands))
+                     (setq dealer-hand (slot-value blackjack--game 'dealer-hand)))
+                    (after-all
+                     (setq blackjack--game nil))
+                    (it "shows game menu"
+                        (expect (slot-value blackjack--game 'deck-type) :to-be 'jacks)
+                        (expect (length player-hands) :to-be 1)
+                        (expect (length (slot-value (nth 0 player-hands) 'cards)) :to-be 2)
+                        (expect (length (slot-value dealer-hand 'cards)) :to-be 2)
+                        ;(expect (length (slot-value blackjack--game 'shoe)) :to-be 48)
+                        (expect (slot-value blackjack--game 'current-menu) :to-be 'game))))
+
 
 (provide 'test-blackjack)
 
