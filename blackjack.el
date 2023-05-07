@@ -107,6 +107,14 @@
   "File to persist blackjack game state to."
   :type '(file) :group 'blackjack)
 
+(defcustom blackjack-currency "$"
+  "Currency to display.
+
+Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
+3-character currency code as per ISO 4217."
+  :type '(string)
+  :group 'blackjack)
+
 (defclass blackjack-card ()
   ((id :initarg :id :initform 0 :type integer)
    (value :initarg :value :initform 0 :type integer)
@@ -746,7 +754,8 @@
         (setq out (concat out "-")))
     (if (equal status 'won)
         (setq out (concat out "+")))
-    (setq out (concat out "$" (blackjack--format-money (/ bet 100.0))))
+    (setq out
+          (concat out blackjack-currency (blackjack--format-money (/ bet 100.0))))
     (if (and
          (not played)
          (= index current-hand))
@@ -845,7 +854,10 @@
   (let ((money (slot-value blackjack--game 'money))
         (menu (slot-value blackjack--game 'current-menu))
         (out ""))
-    (setq out (format "  Blackjack $%s  " (blackjack--format-money (/ money 100.0))))
+    (setq out
+          (format "  Blackjack %s%s  "
+                  blackjack-currency
+                  (blackjack--format-money (/ money 100.0))))
     (setq out (concat out
                       (pcase menu
                         ('game (blackjack--game-menu))
