@@ -9,6 +9,9 @@ jobs:
   test:
     name: Run test suite
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: /home/runner/work/blackjack-el
     strategy:
       matrix:
         emacs_version:
@@ -22,7 +25,7 @@ jobs:
           version: ${{ matrix.emacs_version }}
       - name: Install packages
         run: |
-          emacs --script ../../../packages.el
+          emacs --script packages.el
       - uses: actions/checkout@v3
       - name: Run tests
         run: make test
