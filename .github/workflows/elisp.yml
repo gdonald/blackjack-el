@@ -25,5 +25,5 @@ jobs:
           echo buttercup | emacs -batch -f package-initialize -L . -f package-install
       - uses: actions/checkout@v3
       - name: Run tests
-        run: ./run-tests
+        run: make test
 
