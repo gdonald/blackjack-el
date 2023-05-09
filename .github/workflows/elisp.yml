@@ -22,7 +22,7 @@ jobs:
           version: ${{ matrix.emacs_version }}
       - name: Install packages
         run: |
-          emacs --script ./blackjack-el/packages.el
+          emacs --script ../packages.el
       - uses: actions/checkout@v3
       - name: Run tests
         run: make test
