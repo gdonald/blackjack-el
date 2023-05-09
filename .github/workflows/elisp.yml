@@ -18,7 +18,6 @@ jobs:
           - '28.2'
         os:
           - ubuntu-latest
-          - macos-latest
     steps:
       - uses: purcell/setup-emacs@master
         with:
