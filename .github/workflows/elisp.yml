@@ -28,5 +28,7 @@ jobs:
         run: |
           emacs --script ./blackjack-el/packages.el
       - name: Run tests
-        run: make test
+        run: |
+          cd blackjack-el
+          make test
 
