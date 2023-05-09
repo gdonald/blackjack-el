@@ -20,19 +20,9 @@ jobs:
       - uses: purcell/setup-emacs@master
         with:
           version: ${{ matrix.emacs_version }}
-      - name: Configure emacs
+      - name: Install packages
         run: |
-          echo "(require 'package)(add-to-list 'package-archives '(\"melpa\" . \"https://melpa.org/packages/\") t)(package-initialize)(unless package-archive-contents (package-refresh-contents))" > $GITHUB_WORKSPACE/.emacs
-          cat ~/.emacs
-      - name: Refresh packages
-        run: |
-          emacs -batch -f package-initialize -L . -f package-refresh-contents
-      - name: Install buttercup
-        run: |
-          echo buttercup  | emacs -batch -f package-initialize -L . -f package-install
-      - name: Install undercover
-        run: |
-          echo undercover | emacs -batch -f package-initialize -L . -f package-install
+          emacs --script packages.el
       - uses: actions/checkout@v3
       - name: Run tests
         run: make test
