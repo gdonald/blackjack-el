@@ -23,6 +23,7 @@ jobs:
       - name: Configure emacs
         run: |
           echo "(require 'package)\n(add-to-list 'package-archives '(\"melpa\" . \"https://melpa.org/packages/\") t)\n(package-initialize)\n(unless package-archive-contents\n  (package-refresh-contents))\n\n" > ~/.emacs
+          cat ~/.emacs
       - name: Refresh packages
         run: |
           emacs -batch -f package-initialize -L . -f package-refresh-contents
