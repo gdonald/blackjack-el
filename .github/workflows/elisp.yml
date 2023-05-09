@@ -22,7 +22,7 @@ jobs:
           version: ${{ matrix.emacs_version }}
       - name: Configure emacs
         run: |
-          echo "(require 'package)(add-to-list 'package-archives '(\"melpa\" . \"https://melpa.org/packages/\") t)(package-initialize)(unless package-archive-contents (package-refresh-contents))" > ~/.emacs
+          echo "(require 'package)(add-to-list 'package-archives '(\"melpa\" . \"https://melpa.org/packages/\") t)(package-initialize)(unless package-archive-contents (package-refresh-contents))" > $GITHUB_WORKSPACE/.emacs
           cat ~/.emacs
       - name: Refresh packages
         run: |
