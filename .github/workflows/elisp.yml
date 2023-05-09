@@ -26,6 +26,8 @@ jobs:
       - name: Install packages
         run: |
           pwd
+          ls -lavh
+          ls -lavh ..
           emacs --script ./packages.el
       - uses: actions/checkout@v3
       - name: Run tests
