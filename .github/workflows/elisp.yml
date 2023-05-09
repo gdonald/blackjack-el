@@ -20,6 +20,9 @@ jobs:
       - uses: purcell/setup-emacs@master
         with:
           version: ${{ matrix.emacs_version }}
+      - name: Configure emacs
+        run: |
+          echo "(require 'package)\n(add-to-list 'package-archives '(\"melpa\" . \"https://melpa.org/packages/\") t)\n(package-initialize)\n(unless package-archive-contents\n  (package-refresh-contents))\n\n" > ~/.emacs
       - name: Install buttercup
         run: |
           echo buttercup  | emacs -batch -f package-initialize -L . -f package-install
