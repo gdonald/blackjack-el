@@ -28,6 +28,7 @@ jobs:
           pwd
           ls -lavh
           ls -lavh ..
+          ls -lavh blackjack-el
           emacs --script ./packages.el
       - uses: actions/checkout@v3
       - name: Run tests
