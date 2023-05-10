@@ -1165,7 +1165,7 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
   (let ((game (blackjack-game)))
     (blackjack--load-saved-game game)
     (blackjack--normalize-num-decks game)
-    (until (slot-value game 'quitting)
+    (while (not (slot-value game 'quitting))
       (blackjack--deal-new-hand game))))
 
 ;;;###autoload
