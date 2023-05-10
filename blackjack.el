@@ -215,38 +215,37 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 (defun blackjack--deal-new-hand (game)
   "Deal new GAME hands."
   (interactive)
-  (if (blackjack--valid-menu-action-p game 'game)
-      (progn
-        (if (blackjack--need-to-shuffle-p game)
-            (blackjack--shuffle game))
-        (let (player-hand dealer-hand)
-          (setf (slot-value game 'player-hands) '())
-          (setq player-hand (blackjack-player-hand :id (blackjack--next-id game) :bet (slot-value game 'current-bet)))
-          (setq dealer-hand (blackjack-dealer-hand))
-          (dotimes (_x 2)
-            (blackjack--deal-card game player-hand)
-            (blackjack--deal-card game dealer-hand))
-          (push player-hand (slot-value game 'player-hands))
-          (setf (slot-value game 'current-player-hand) 0)
-          (setf (slot-value game 'dealer-hand) dealer-hand)
-          (if (and
-               (blackjack--dealer-upcard-is-ace-p dealer-hand)
-               (not (blackjack--hand-is-blackjack-p (slot-value player-hand 'cards))))
-              (progn
-                (setf (slot-value game 'current-menu) 'insurance)
-                (blackjack--draw-hands game)
-                (blackjack--ask-insurance-action game))
-            (if (blackjack--player-hand-done-p game player-hand)
-                (progn
-                  (setf (slot-value dealer-hand 'hide-down-card) nil)
-                  (blackjack--pay-hands game)
-                  (setf (slot-value game 'current-menu) 'game)
-                  (blackjack--draw-hands game)
-                  (blackjack--ask-game-action game))
-              (setf (slot-value game 'current-menu) 'hand)
+  (when (blackjack--valid-menu-action-p game 'game)
+    (when (blackjack--need-to-shuffle-p game)
+      (blackjack--shuffle game))
+    (let (player-hand dealer-hand)
+      (setf (slot-value game 'player-hands) '())
+      (setq player-hand (blackjack-player-hand :id (blackjack--next-id game) :bet (slot-value game 'current-bet)))
+      (setq dealer-hand (blackjack-dealer-hand))
+      (dotimes (_x 2)
+        (blackjack--deal-card game player-hand)
+        (blackjack--deal-card game dealer-hand))
+      (push player-hand (slot-value game 'player-hands))
+      (setf (slot-value game 'current-player-hand) 0)
+      (setf (slot-value game 'dealer-hand) dealer-hand)
+      (if (and
+           (blackjack--dealer-upcard-is-ace-p dealer-hand)
+           (not (blackjack--hand-is-blackjack-p (slot-value player-hand 'cards))))
+          (progn
+            (setf (slot-value game 'current-menu) 'insurance)
+            (blackjack--draw-hands game)
+            (blackjack--ask-insurance-action game))
+        (if (blackjack--player-hand-done-p game player-hand)
+            (progn
+              (setf (slot-value dealer-hand 'hide-down-card) nil)
+              (blackjack--pay-hands game)
+              (setf (slot-value game 'current-menu) 'game)
               (blackjack--draw-hands game)
-              (blackjack--save game)
-              (blackjack--ask-hand-action game)))))))
+              (blackjack--ask-game-action game))
+          (setf (slot-value game 'current-menu) 'hand)
+          (blackjack--draw-hands game)
+          (blackjack--save game)
+          (blackjack--ask-hand-action game))))))
 
 (defun blackjack--deal-card (game hand)
   "Deal a card into HAND from GAME shoe."
@@ -280,16 +279,15 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 
 (defun blackjack--pay-player-hand (game player-hand dealer-hand-value dealer-hand-busted)
   "Pay GAME PLAYER-HAND based on DEALER-HAND-VALUE and DEALER-HAND-BUSTED."
-  (if (not (slot-value player-hand 'payed))
-      (progn
-        (setf (slot-value player-hand 'payed) t)
-        (let (player-hand-value)
-          (setq player-hand-value (blackjack--player-hand-value (slot-value player-hand 'cards) 'soft))
-          (if (blackjack--player-hand-won player-hand-value dealer-hand-value dealer-hand-busted)
-              (blackjack--pay-won-hand game player-hand)
-            (if (blackjack--player-hand-lost-p player-hand-value dealer-hand-value)
-                (blackjack--collect-lost-hand game player-hand)
-              (setf (slot-value player-hand 'status) 'push)))))))
+  (unless (slot-value player-hand 'payed)
+    (setf (slot-value player-hand 'payed) t)
+    (let (player-hand-value)
+      (setq player-hand-value (blackjack--player-hand-value (slot-value player-hand 'cards) 'soft))
+      (if (blackjack--player-hand-won player-hand-value dealer-hand-value dealer-hand-busted)
+          (blackjack--pay-won-hand game player-hand)
+        (if (blackjack--player-hand-lost-p player-hand-value dealer-hand-value)
+            (blackjack--collect-lost-hand game player-hand)
+          (setf (slot-value player-hand 'status) 'push))))))
 
 (defun blackjack--collect-lost-hand (game player-hand)
   "Collect bet from losing GAME PLAYER-HAND."
@@ -299,33 +297,30 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 (defun blackjack--pay-won-hand (game player-hand)
   "Pay winning GAME PLAYER-HAND bet."
   (let ((bet (slot-value player-hand 'bet)))
-    (if (blackjack--hand-is-blackjack-p (slot-value player-hand 'cards))
-        (setf bet (truncate (* 1.5 bet))))
+    (when (blackjack--hand-is-blackjack-p (slot-value player-hand 'cards))
+      (setf bet (truncate (* 1.5 bet))))
     (setf (slot-value game 'money) (+ (slot-value game 'money) bet)
           (slot-value player-hand 'status) 'won
           (slot-value player-hand 'bet) bet)))
 
 (defun blackjack--player-hand-lost-p (player-hand-value dealer-hand-value)
   "Return non-nil if PLAYER-HAND-VALUE < DEALER-HAND-VALUE."
-  (if (< player-hand-value dealer-hand-value)
-      t))
+  (< player-hand-value dealer-hand-value))
 
 (defun blackjack--player-hand-won (player-hand-value dealer-hand-value dealer-hand-busted)
   "Return non-nil if PLAYER-HAND-VALUE > DEALER-HAND-VALUE && !DEALER-HAND-BUSTED."
-  (if (or
-       dealer-hand-busted
-       (> player-hand-value dealer-hand-value))
-      t))
+  (or
+   dealer-hand-busted
+   (> player-hand-value dealer-hand-value)))
 
 (defun blackjack--player-hand-done-p (game player-hand)
   "Return non-nil when GAME PLAYER-HAND is done."
-  (if (not (blackjack--no-more-actions-p player-hand))
-      nil
+  (when (blackjack--no-more-actions-p player-hand)
     (setf (slot-value player-hand 'played) t)
-    (if (and
-         (not (slot-value player-hand 'payed))
-         (blackjack--player-hand-is-busted-p (slot-value player-hand 'cards)))
-        (blackjack--collect-busted-hand game player-hand))
+    (when (and
+           (not (slot-value player-hand 'payed))
+           (blackjack--player-hand-is-busted-p (slot-value player-hand 'cards)))
+      (blackjack--collect-busted-hand game player-hand))
     t))
 
 (defun blackjack--collect-busted-hand (game player-hand)
@@ -351,10 +346,9 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
   (let* ((shoe (slot-value game 'shoe))
          (cards-count (length shoe)))
     (if (> cards-count 0)
-        (progn
-          (let ((used (- (blackjack--total-cards game) cards-count))
-                (spec (aref (slot-value game 'shuffle-specs) (1- (slot-value game 'num-decks)))))
-            (> (* 100 (/ (float used) cards-count)) spec)))
+        (let ((used (- (blackjack--total-cards game) cards-count))
+              (spec (aref (slot-value game 'shuffle-specs) (1- (slot-value game 'num-decks)))))
+          (> (* 100 (/ (float used) cards-count)) spec))
       t)))
 
 (defun blackjack--total-cards (game)
@@ -386,8 +380,8 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
     (while (< (length shoe) total-cards)
       (dotimes (suit 4)
         (dolist (value (reverse values))
-          (if (< (length shoe) total-cards)
-              (setq shoe (cons (blackjack-card :id (blackjack--next-id game) :value value :suit suit) shoe))))))
+          (when (< (length shoe) total-cards)
+            (setq shoe (cons (blackjack-card :id (blackjack--next-id game) :value value :suit suit) shoe))))))
     (setf (slot-value game 'shoe) (blackjack--shuffle-loop shoe))
     shoe))
     
@@ -441,9 +435,9 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
   "Return non-nil when playing the GAME dealer hand is required."
   (let ((player-hands (slot-value game 'player-hands)))
     (cl-dolist (player-hand player-hands)
-      (when (not (or
-                  (blackjack--player-hand-is-busted-p (slot-value player-hand 'cards))
-                  (blackjack--hand-is-blackjack-p (slot-value player-hand 'cards))))
+      (unless (or
+               (blackjack--player-hand-is-busted-p (slot-value player-hand 'cards))
+               (blackjack--hand-is-blackjack-p (slot-value player-hand 'cards)))
         (cl-return t)))))
 
 (defun blackjack--dealer-hand-counts (dealer-hand)
@@ -471,13 +465,12 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
   (let* ((playing (blackjack--need-to-play-dealer-hand-p game))
          (dealer-hand (slot-value game 'dealer-hand))
          (cards (slot-value dealer-hand 'cards)))
-    (if
-        (or
-         playing
-         (blackjack--hand-is-blackjack-p cards))
-        (setf (slot-value dealer-hand 'hide-down-card) nil))
-    (if playing
-        (blackjack--deal-required-cards game))
+    (when (or 
+           playing
+           (blackjack--hand-is-blackjack-p cards))
+      (setf (slot-value dealer-hand 'hide-down-card) nil))
+    (when playing
+      (blackjack--deal-required-cards game))
     (setf (slot-value dealer-hand 'played) t)
     (blackjack--pay-hands game)
     (setf (slot-value game 'current-menu) 'game)
@@ -493,65 +486,65 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 (defun blackjack--hit (game)
   "Deal a new card to the current GAME player hand."
   (interactive)
-  (if (blackjack--valid-hand-action-p game 'hit)
-      (let ((player-hand (blackjack--current-player-hand game)))
-        (blackjack--deal-card game player-hand)
-        (if (blackjack--player-hand-done-p game player-hand)
-            (blackjack--process game)
-          (setf (slot-value game 'current-menu) 'hand)
-          (blackjack--draw-hands game)
-          (blackjack--ask-hand-action game)))))
+  (when (blackjack--valid-hand-action-p game 'hit)
+    (let ((player-hand (blackjack--current-player-hand game)))
+      (blackjack--deal-card game player-hand)
+      (if (blackjack--player-hand-done-p game player-hand)
+          (blackjack--process game)
+        (setf (slot-value game 'current-menu) 'hand)
+        (blackjack--draw-hands game)
+        (blackjack--ask-hand-action game)))))
 
 (defun blackjack--double (game)
   "Double the current GAME player hand bet and deal a single card."
   (interactive)
-  (if (blackjack--valid-hand-action-p game 'double)
-      (let ((player-hand (blackjack--current-player-hand game)))
-        (blackjack--deal-card game player-hand)
-        (setf (slot-value player-hand 'played) t
-              (slot-value player-hand 'bet) (* 2 (slot-value player-hand 'bet)))
-        (if (blackjack--player-hand-done-p game player-hand)
-            (blackjack--process game)
-          (blackjack--ask-hand-action game)))))
+  (when (blackjack--valid-hand-action-p game 'double)
+    (let ((player-hand (blackjack--current-player-hand game)))
+      (blackjack--deal-card game player-hand)
+      (setf (slot-value player-hand 'played) t
+            (slot-value player-hand 'bet) (* 2 (slot-value player-hand 'bet)))
+      (if (blackjack--player-hand-done-p game player-hand)
+          (blackjack--process game)
+        (blackjack--ask-hand-action game)))))
 
 (defun blackjack--stand (game)
   "End the current GAME player hand."
   (interactive)
-  (if (blackjack--valid-hand-action-p game 'stand)
-      (let ((player-hand (blackjack--current-player-hand game)))
-        (setf (slot-value player-hand 'stood) t
-              (slot-value player-hand 'played) t)
-        (blackjack--process game))))
+  (when (blackjack--valid-hand-action-p game 'stand)
+    (let ((player-hand (blackjack--current-player-hand game)))
+      (setf (slot-value player-hand 'stood) t
+            (slot-value player-hand 'played) t)
+      (blackjack--process game))))
 
 (defun blackjack--split (game)
   "Split the current GAME player hand."
   (interactive)
-  (if (blackjack--valid-hand-action-p game 'split)
-      (let ((player-hands (slot-value game 'player-hands))
-            (player-hand) (card) (hand) (x 0))
-        (setq hand (blackjack-player-hand :id (blackjack--next-id game) :bet (slot-value game 'current-bet)))
-        (setq player-hands (reverse player-hands))
-        (push hand player-hands)
-        (setq player-hands (reverse player-hands))
-        (setf (slot-value game 'player-hands) player-hands)
-        (setq x (1- (length player-hands)))
-        (while (> x (slot-value game 'current-player-hand))
-          (setq player-hand (nth (1- x) player-hands))
-          (setq hand (nth x player-hands))
-          (setf (slot-value hand 'cards) (slot-value player-hand 'cards))
-          (setq x (1- x)))
-        (setq player-hand (nth (slot-value game 'current-player-hand) player-hands))
-        (setq hand (nth (1+ (slot-value game 'current-player-hand)) player-hands))
-        (setf (slot-value hand 'cards) '())
-        (setq card (nth 1 (slot-value player-hand 'cards)))
-        (push card (slot-value hand 'cards))
-        (setf (slot-value player-hand 'cards) (cl-remove card (slot-value player-hand 'cards) :count 1))
-        (blackjack--deal-card game player-hand)
-        (if (blackjack--player-hand-done-p game player-hand)
-            (blackjack--process game)
-          (setf (slot-value game 'current-menu) 'hand)
-          (blackjack--draw-hands game)
-          (blackjack--ask-hand-action game)))))
+  (when (blackjack--valid-hand-action-p game 'split)
+    (let ((player-hands (slot-value game 'player-hands))
+          (player-hand) (card) (hand) (x 0))
+      (setq hand (blackjack-player-hand :id (blackjack--next-id game) :bet (slot-value game 'current-bet)))
+      (setq player-hands (reverse player-hands))
+      (push hand player-hands)
+      (setq player-hands (reverse player-hands))
+      (setf (slot-value game 'player-hands) player-hands)
+      (setq x (1- (length player-hands)))
+      (while (> x (slot-value game 'current-player-hand))
+        (setq player-hand (nth (1- x) player-hands))
+        (setq hand (nth x player-hands))
+        (setf (slot-value hand 'cards) (slot-value player-hand 'cards))
+        (setq x (1- x)))
+      (setq player-hand (nth (slot-value game 'current-player-hand) player-hands))
+      (setq hand (nth (1+ (slot-value game 'current-player-hand)) player-hands))
+      (setf (slot-value hand 'cards) '())
+      (setq card (nth 1 (slot-value player-hand 'cards)))
+      (push card (slot-value hand 'cards))
+      (setf (slot-value player-hand 'cards) (cl-remove card (slot-value player-hand 'cards) :count 1))
+      (blackjack--deal-card game player-hand)
+      (if (blackjack--player-hand-done-p game player-hand)
+          (blackjack--process game)
+        (setf (slot-value game 'current-menu) 'hand)
+        (blackjack--draw-hands game)
+        (blackjack--ask-hand-action game)))))
 
 (defun blackjack--valid-menu-action-p (game action)
   "Return non-nil if the GAME menu ACTION can be performed."
@@ -563,34 +556,34 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
          (cards (slot-value player-hand 'cards))
          (card-0 (nth 0 cards))
          (card-1 (nth 1 cards)))
-    (if (blackjack--valid-menu-action-p game 'hand)
-        (pcase action
-          ('hit
-           (not
-            (or
-             (slot-value player-hand 'played)
-             (slot-value player-hand 'stood)
-             (= 21 (blackjack--player-hand-value cards 'hard))
-             (blackjack--hand-is-blackjack-p cards)
-             (blackjack--player-hand-is-busted-p cards))))
-          ('stand
-           (not
-            (or
-             (slot-value player-hand 'stood)
-             (blackjack--player-hand-is-busted-p cards)
-             (blackjack--hand-is-blackjack-p cards))))
-          ('split
-           (and
-            (not (slot-value player-hand 'stood))
-            (< (length (slot-value game 'player-hands)) 7)
-            (>= (slot-value game 'money) (+ (blackjack--all-bets game) (slot-value player-hand 'bet)))
-            (eq (length cards) 2)
-            (eq (slot-value card-0 'value) (slot-value card-1 'value))))
-          ('double
-           (and
-            (>= (slot-value game 'money) (+ (blackjack--all-bets game) (slot-value player-hand 'bet)))
-            (not (or (slot-value player-hand 'stood) (not (eq 2 (length cards)))
-                     (blackjack--hand-is-blackjack-p cards)))))))))
+    (when (blackjack--valid-menu-action-p game 'hand)
+      (pcase action
+        ('hit
+         (not
+          (or
+           (slot-value player-hand 'played)
+           (slot-value player-hand 'stood)
+           (= 21 (blackjack--player-hand-value cards 'hard))
+           (blackjack--hand-is-blackjack-p cards)
+           (blackjack--player-hand-is-busted-p cards))))
+        ('stand
+         (not
+          (or
+           (slot-value player-hand 'stood)
+           (blackjack--player-hand-is-busted-p cards)
+           (blackjack--hand-is-blackjack-p cards))))
+        ('split
+         (and
+          (not (slot-value player-hand 'stood))
+          (< (length (slot-value game 'player-hands)) 7)
+          (>= (slot-value game 'money) (+ (blackjack--all-bets game) (slot-value player-hand 'bet)))
+          (eq (length cards) 2)
+          (eq (slot-value card-0 'value) (slot-value card-1 'value))))
+        ('double
+         (and
+          (>= (slot-value game 'money) (+ (blackjack--all-bets game) (slot-value player-hand 'bet)))
+          (not (or (slot-value player-hand 'stood) (not (eq 2 (length cards)))
+                  (blackjack--hand-is-blackjack-p cards)))))))))
 
 (defun blackjack--current-player-hand (game)
   "Return current GAME player hand."
@@ -611,50 +604,49 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
          (bet (slot-value player-hand 'bet))
          (new-bet (/ bet 2))
          (money (slot-value game 'money)))
-    (if (blackjack--valid-menu-action-p game 'insurance)
-        (progn
-          (setf (slot-value player-hand 'bet) new-bet
-                (slot-value player-hand 'played) t
-                (slot-value player-hand 'payed) t
-                (slot-value player-hand 'status) 'lost
-                (slot-value game 'money) (- money new-bet))
-          (setf (slot-value game 'current-menu) 'game)
-          (blackjack--draw-hands game)
-          (blackjack--ask-game-action game)))))
+    (when (blackjack--valid-menu-action-p game 'insurance)
+      (setf (slot-value player-hand 'bet) new-bet
+            (slot-value player-hand 'played) t
+            (slot-value player-hand 'payed) t
+            (slot-value player-hand 'status) 'lost
+            (slot-value game 'money) (- money new-bet))
+      (setf (slot-value game 'current-menu) 'game)
+      (blackjack--draw-hands game)
+      (blackjack--ask-game-action game))))
 
 (defun blackjack--no-insurance (game)
   "Decline GAME player hand insurance."
   (interactive)
   (let* ((dealer-hand (slot-value game 'dealer-hand))
          (dealer-hand-cards (slot-value dealer-hand 'cards)))
-    (if (blackjack--valid-menu-action-p game 'insurance)
-        (if (blackjack--hand-is-blackjack-p dealer-hand-cards)
-            (progn
-              (setf (slot-value dealer-hand 'hide-down-card) nil)
-              (blackjack--pay-hands game)
-              (setf (slot-value game 'current-menu) 'game)
-              (blackjack--draw-hands game)
-              (blackjack--ask-hand-action game))
-          (let ((player-hand (blackjack--current-player-hand game)))
-            (if (blackjack--player-hand-done-p game player-hand)
-                (blackjack--play-dealer-hand game)
-              (setf (slot-value game 'current-menu) 'hand)
-              (blackjack--draw-hands game)
-              (blackjack--ask-hand-action game)))))))
+    (when (blackjack--valid-menu-action-p game 'insurance)
+      (if (blackjack--hand-is-blackjack-p dealer-hand-cards)
+          (progn
+            (setf (slot-value dealer-hand 'hide-down-card) nil)
+            (blackjack--pay-hands game)
+            (setf (slot-value game 'current-menu) 'game)
+            (blackjack--draw-hands game)
+            (blackjack--ask-hand-action game))
+        (let ((player-hand (blackjack--current-player-hand game)))
+          (if (blackjack--player-hand-done-p game player-hand)
+              (blackjack--play-dealer-hand game)
+            (setf (slot-value game 'current-menu) 'hand)
+            (blackjack--draw-hands game)
+            (blackjack--ask-hand-action game)))))))
 
 (defun blackjack--ask-new-bet (game)
   "Update the current GAME player bet."
   (interactive)
-  (if (blackjack--valid-menu-action-p game 'game)
-      (let ((answer (blackjack--new-bet-menu))
-            (bet 0))
-        (progn
-          (setq bet (* 100 (string-to-number answer)))
-          (setf (slot-value game 'current-bet) bet)
-          (blackjack--normalize-current-bet game)
-          (blackjack--save game)
-          (setf (slot-value game 'current-menu) 'game)
-          (blackjack--deal-new-hand game)))))
+  (when (blackjack--valid-menu-action-p game 'game)
+    (let ((answer (blackjack--new-bet-menu))
+          (bet 0))
+      (progn
+        (setq bet (* 100 (string-to-number answer)))
+        (setf (slot-value game 'current-bet) bet)
+        (blackjack--normalize-current-bet game)
+        (blackjack--save game)
+        (setf (slot-value game 'current-menu) 'game)
+        (blackjack--deal-new-hand game)))))
 
 (defun blackjack--new-bet-menu ()
   "Get new bet."
@@ -711,12 +703,11 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
         (hide-down-card (slot-value dealer-hand 'hide-down-card))
         (total 0) (card))
     (dotimes (x (length cards))
-      (if (not (and hide-down-card (= x 0)))
-          (progn
-            (setq card (nth x cards))
-            (setq total (+ total (blackjack--card-val card count-method total))))))
-    (if (and (eq count-method 'soft) (> total 21))
-        (setq total (blackjack--dealer-hand-value dealer-hand 'hard)))
+      (unless (and hide-down-card (= x 0))
+        (setq card (nth x cards))
+        (setq total (+ total (blackjack--card-val card count-method total)))))
+    (when (and (eq count-method 'soft) (> total 21))
+      (setq total (blackjack--dealer-hand-value dealer-hand 'hard)))
     total))
 
 (defun blackjack--draw-player-hands (game)
@@ -769,16 +760,16 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
         (status (slot-value player-hand 'status))
         (bet (slot-value player-hand 'bet))
         (out ""))
-    (if (equal status 'lost)
-        (setq out (concat out "-")))
-    (if (equal status 'won)
-        (setq out (concat out "+")))
+    (when (equal status 'lost)
+      (setq out (concat out "-")))
+    (when (equal status 'won)
+      (setq out (concat out "+")))
     (setq out
           (concat out blackjack-currency (blackjack--format-money (/ bet 100.0))))
-    (if (and
-         (not played)
-         (= index current-hand))
-        (setq out (concat out " ⇐")))
+    (when (and
+           (not played)
+           (= index current-hand))
+      (setq out (concat out " ⇐")))
     (setq out (concat out "  "))
     out))
 
@@ -788,17 +779,17 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
     (dotimes (x (length cards))
       (setq card (nth x cards))
       (setq total (+ total (blackjack--card-val card count-method total))))
-    (if (and (eq count-method 'soft) (> total 21))
-        (setq total (blackjack--player-hand-value cards 'hard)))
+    (when (and (eq count-method 'soft) (> total 21))
+      (setq total (blackjack--player-hand-value cards 'hard)))
     total))
 
 (defun blackjack--card-val (card count-method total)
   "Calculates CARD value based on COUNT-METHOD and running hand TOTAL."
   (let ((value (1+ (slot-value card 'value))))
-    (if (> value 9)
-        (setq value 10))
-    (if (and (eq count-method 'soft) (eq value 1) (< total 11))
-        (setq value 11))
+    (when (> value 9)
+      (setq value 10))
+    (when (and (eq count-method 'soft) (eq value 1) (< total 11))
+      (setq value 11))
     value))
 
 (defun blackjack--card-face (game value suit)
@@ -823,12 +814,12 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
         (max-bet (slot-value game 'max-bet))
         (current-bet (slot-value game 'current-bet))
         (money (slot-value game 'money)))
-    (if (< current-bet min-bet)
-        (setq current-bet min-bet))
-    (if (> current-bet max-bet)
-        (setq current-bet max-bet))
-    (if (> current-bet money)
-        (setq current-bet money))
+    (when (< current-bet min-bet)
+      (setq current-bet min-bet))
+    (when (> current-bet max-bet)
+      (setq current-bet max-bet))
+    (when (> current-bet money)
+      (setq current-bet money))
     (setf (slot-value game 'current-bet) current-bet)))
 
 (defun blackjack--persist-file-name ()
@@ -842,14 +833,14 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
       (with-temp-buffer
         (insert-file-contents-literally (blackjack--persist-file-name))
         (setq content (buffer-string))))
-    (if content
-        (setq parts (split-string content "|")))
-    (if (= (length parts) 5)
-        (setf (slot-value game 'num-decks) (string-to-number (nth 0 parts))
-              (slot-value game 'deck-type) (intern (nth 1 parts))
-              (slot-value game 'face-type) (intern (nth 2 parts))
-              (slot-value game 'money) (string-to-number (nth 3 parts))
-              (slot-value game 'current-bet) (string-to-number (nth 4 parts))))))
+    (when content
+      (setq parts (split-string content "|")))
+    (when (= (length parts) 5)
+      (setf (slot-value game 'num-decks) (string-to-number (nth 0 parts))
+            (slot-value game 'deck-type) (intern (nth 1 parts))
+            (slot-value game 'face-type) (intern (nth 2 parts))
+            (slot-value game 'money) (string-to-number (nth 3 parts))
+            (slot-value game 'current-bet) (string-to-number (nth 4 parts))))))
 
 (defun blackjack--save (game)
   "Persist GAME state."
@@ -865,10 +856,9 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 (defun blackjack--quit (game)
   "Quit Blackjack GAME."
   (interactive)
-  (if (blackjack--valid-menu-action-p game 'game)
-      (progn
-        (setf (slot-value game 'quitting) t)
-        (quit-window))))
+  (when (blackjack--valid-menu-action-p game 'game)
+    (setf (slot-value game 'quitting) t)
+    (quit-window)))
 
 (defun blackjack--header (game)
   "Return GAME header."
@@ -1058,14 +1048,14 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 (defun blackjack--hand-menu (game)
   "Return GAME hand menu string."
   (let ((options '()))
-    (if (blackjack--valid-hand-action-p game 'double)
-        (push (format "(%s) double" blackjack-deal-double-key) options))
-    (if (blackjack--valid-hand-action-p game 'split)
-        (push (format "(%s) split" blackjack-split-key) options))
-    (if (blackjack--valid-hand-action-p game 'stand)
-        (push (format "(%s) stand" blackjack-stand-key) options))
-    (if (blackjack--valid-hand-action-p game 'hit)
-        (push (format "(%s) hit" blackjack-hit-key) options))
+    (when (blackjack--valid-hand-action-p game 'double)
+      (push (format "(%s) double" blackjack-deal-double-key) options))
+    (when (blackjack--valid-hand-action-p game 'split)
+      (push (format "(%s) split" blackjack-split-key) options))
+    (when (blackjack--valid-hand-action-p game 'stand)
+      (push (format "(%s) stand" blackjack-stand-key) options))
+    (when (blackjack--valid-hand-action-p game 'hit)
+      (push (format "(%s) hit" blackjack-hit-key) options))
     (mapconcat #'identity options "  ")))
 
 (defun blackjack--ask-hand-action (game)
@@ -1089,24 +1079,23 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
   "Hand actions menu for GAME."
   (let ((read-answer-short t)
 	(actions '(("help" ?? "show help"))))
-    (if (blackjack--valid-hand-action-p game 'double)
-        (setf actions (cons `("double" ,blackjack-deal-double-key "double bet, deal a new card, and end hand") actions)))
-    (if (blackjack--valid-hand-action-p game 'split)
-        (setf actions (cons `("split" ,blackjack-split-key "split hand into two hands") actions)))
-    (if (blackjack--valid-hand-action-p game 'stand)
-        (setf actions (cons `("stand" ,blackjack-stand-key "end current hand with no further actions") actions)))
-    (if (blackjack--valid-hand-action-p game 'hit)
-        (setf actions (cons `("hit" ,blackjack-hit-key "deal a new card") actions)))
+    (when (blackjack--valid-hand-action-p game 'double)
+      (setf actions (cons `("double" ,blackjack-deal-double-key "double bet, deal a new card, and end hand") actions)))
+    (when (blackjack--valid-hand-action-p game 'split)
+      (setf actions (cons `("split" ,blackjack-split-key "split hand into two hands") actions)))
+    (when (blackjack--valid-hand-action-p game 'stand)
+      (setf actions (cons `("stand" ,blackjack-stand-key "end current hand with no further actions") actions)))
+    (when (blackjack--valid-hand-action-p game 'hit)
+      (setf actions (cons `("hit" ,blackjack-hit-key "deal a new card") actions)))
     (read-answer "Hand Action " actions)))
 
 (defun blackjack--show-options-menu (game)
   "Switch to GAME options menu."
   (interactive)
-  (if (blackjack--valid-menu-action-p game 'game)
-      (progn
-        (setf (slot-value game 'current-menu) 'options)
-        (blackjack--update-header game)
-        (blackjack--ask-game-options game))))
+  (when (blackjack--valid-menu-action-p game 'game)
+    (setf (slot-value game 'current-menu) 'options)
+    (blackjack--update-header game)
+    (blackjack--ask-game-options game)))
 
 (defun blackjack--show-num-decks-menu (game)
   "Switch to GAME number of decks menu."
@@ -1139,11 +1128,10 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
     (fset func-name
           (lambda (game)
             (interactive)
-            (if (blackjack--valid-menu-action-p game 'options)
-                (progn
-                  (setf (slot-value game 'current-menu) menu)
-                  (blackjack--update-header game)
-                  (funcall (intern (format "blackjack--ask-%s-action" menu)))))))))
+            (when (blackjack--valid-menu-action-p game 'options)
+              (setf (slot-value game 'current-menu) menu)
+              (blackjack--update-header game)
+              (funcall (intern (format "blackjack--ask-%s-action" menu))))))))
 
 (defun blackjack--save-deal-new-hand (game)
   "Save GAME and deal new hand."
@@ -1177,7 +1165,7 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
   (let ((game (blackjack-game)))
     (blackjack--load-saved-game game)
     (blackjack--normalize-num-decks game)
-    (while (not (slot-value game 'quitting))
+    (until (slot-value game 'quitting)
       (blackjack--deal-new-hand game))))
 
 ;;;###autoload
