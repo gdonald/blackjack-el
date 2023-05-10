@@ -25,6 +25,10 @@ You can run it like this:
 
     M-x blackjack
 
+#### Running tests:
+
+`make test` and `make test-coverage` are available.  You will need ruby and the "simplecov" gem installed for test coverage to build.
+
 #### Going broke:
 
 If you run out of money, delete `blackjack.txt` and restart blackjack.  You will get a free $100 for another try.

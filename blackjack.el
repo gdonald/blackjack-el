@@ -361,26 +361,36 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
   "Return total number of cards per GAME shoe."
   (* (slot-value game 'cards-per-deck) (slot-value game 'num-decks)))
 
-(defun blackjack--shuffle (game)
-  "Fill a new GAME shoe with cards."
-  (let ((total-cards (blackjack--total-cards game))
-        (shoe '())
-        (values '()))
-    (setq values
-          (pcase (slot-value game 'deck-type)
+(defun blackjack--shuffle (game &optional card-values skip-shuffle)
+  "Build a GAME shoe using CARD-VALUES if provided and shuffle unless SKIP-SHUFFLE."
+  (let (values)
+    (setq values (or card-values (blackjack--card-values game)))
+    (setf (slot-value game 'shoe) (blackjack--build-cards game values))
+    (unless skip-shuffle
+      (setf (slot-value game 'shoe) (blackjack--shuffle-loop (slot-value game 'shoe))))))
+
+(defun blackjack--card-values (game)
+  "Return card values from GAME deck-type."
+  (pcase (slot-value game 'deck-type)
             ('regular (number-sequence 0 12))
             ('aces '(0))
             ('jacks '(10))
             ('aces-jacks '(0 10))
             ('sevens '(6))
             ('eights '(7))))
+
+(defun blackjack--build-cards (game values)
+  "Populate GAME shoe with card VALUES."
+  (let ((total-cards (blackjack--total-cards game))
+        (shoe '()))
     (while (< (length shoe) total-cards)
       (dotimes (suit 4)
-        (dolist (value values)
+        (dolist (value (reverse values))
           (if (< (length shoe) total-cards)
               (setq shoe (cons (blackjack-card :id (blackjack--next-id game) :value value :suit suit) shoe))))))
-    (setf (slot-value game 'shoe) (blackjack--shuffle-loop shoe))))
-
+    (setf (slot-value game 'shoe) (blackjack--shuffle-loop shoe))
+    shoe))
+    
 (defun blackjack--shuffle-loop (shoe)
   "Shuffle SHOE."
   (dotimes (_x (* 7 (length shoe)))
@@ -961,7 +971,20 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
   (let* ((answer (blackjack-deck-type-menu))
 	 (deck-type (intern answer)))
     (setf (slot-value game 'deck-type) deck-type)
+    (blackjack--normalize-num-decks game)
     (blackjack--shuffle-save-deal-new-hand game)))
+
+(defun blackjack--normalize-num-decks (game)
+  "Normalize GAME num-decks."
+  (let ((num-decks (slot-value game 'num-decks)))
+    (when (and (< num-decks 2)
+               (equal (slot-value game 'deck-type) 'aces))
+      (setq num-decks 2))
+    (when (< num-decks 1)
+      (setq num-decks 1))
+    (when (> num-decks 8)
+        (setq num-decks 8))
+    (setf (slot-value game 'num-decks) num-decks)))
 
 (defun blackjack-deck-type-menu ()
   "New GAME deck type menu."
@@ -1098,11 +1121,8 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
   (let ((answer (blackjack--new-number-decks-prompt))
         (num-decks 1))
     (setq num-decks (string-to-number answer))
-    (if (< num-decks 1)
-        (setq num-decks 1))
-    (if (> num-decks 8)
-        (setq num-decks 8))
     (setf (slot-value game 'num-decks) num-decks)
+    (blackjack--normalize-num-decks game)
     (blackjack--save game)
     (blackjack--shuffle game)
     (setf (slot-value game 'current-menu) 'game)
@@ -1156,6 +1176,7 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
   "Initialize game state."
   (let ((game (blackjack-game)))
     (blackjack--load-saved-game game)
+    (blackjack--normalize-num-decks game)
     (while (not (slot-value game 'quitting))
       (blackjack--deal-new-hand game))))
 
