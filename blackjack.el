@@ -626,7 +626,7 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
             (blackjack--pay-hands game)
             (setf (slot-value game 'current-menu) 'game)
             (blackjack--draw-hands game)
-            (blackjack--ask-hand-action game))
+            (blackjack--ask-game-action game))
         (let ((player-hand (blackjack--current-player-hand game)))
           (if (blackjack--player-hand-done-p game player-hand)
               (blackjack--play-dealer-hand game)
