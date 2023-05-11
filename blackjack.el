@@ -263,8 +263,7 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 
 (defun blackjack--next-id (game)
   "Return next GAME object id."
-  (let ((id (slot-value game 'id)))
-    (setf (slot-value game 'id) (1+ id))))
+  (cl-incf (slot-value game 'id)))
 
 (defun blackjack--pay-hands (game)
   "Pay player GAME hands."
@@ -422,7 +421,7 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 (defun blackjack--play-more-hands (game)
   "Advance to next split GAME player hand."
   (let (player-hand)
-    (setf (slot-value game 'current-player-hand) (1+ (slot-value game 'current-player-hand)))
+    (cl-incf (slot-value game 'current-player-hand))
     (setq player-hand (blackjack--current-player-hand game))
     (blackjack--deal-card game player-hand)
     (if (blackjack--player-hand-done-p game player-hand)
