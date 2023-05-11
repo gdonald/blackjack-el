@@ -271,8 +271,8 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
          (dealer-hand-value (blackjack--dealer-hand-value dealer-hand 'soft))
          (dealer-busted (blackjack--dealer-hand-is-busted-p dealer-hand))
          (player-hands (slot-value game 'player-hands)))
-    (dotimes (x (length player-hands))
-      (blackjack--pay-player-hand game (nth x player-hands) dealer-hand-value dealer-busted))
+    (dolist (player-hand player-hands)
+      (blackjack--pay-player-hand game player-hand dealer-hand-value dealer-busted))
     (blackjack--normalize-current-bet game)
     (blackjack--save game)))
 
@@ -590,11 +590,9 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 
 (defun blackjack--all-bets (game)
   "Return the sum of all GAME player hand bets."
-  (let ((player-hands (slot-value game 'player-hands))
-        (total 0))
-    (dotimes (x (length player-hands))
-      (setq total (+ total (slot-value (nth x player-hands) 'bet))))
-    total))
+  (cl-reduce #'+
+             (slot-value game 'player-hands)
+             :key (lambda (player-hand) (slot-value player-hand 'bet))))
 
 (defun blackjack--insure-hand (game)
   "Insure the current GAME player hand."
@@ -676,46 +674,45 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
   "Return non-nil if DEALER-HAND up-card is an ace."
   (blackjack--is-ace-p (nth 1 (slot-value dealer-hand 'cards))))
 
+(defconst blackjack--card-value-hidden 13
+  "Token card \"value\" representing a hidden card.")
+
 (defun blackjack--draw-dealer-hand (game)
   "Draw the GAME dealer-hand."
-  (let* ((dealer-hand (slot-value game 'dealer-hand))
-         (cards (slot-value dealer-hand 'cards))
-         (hide-down-card (slot-value dealer-hand 'hide-down-card))
-         (card) (suit) (value))
+  (let ((dealer-hand (slot-value game 'dealer-hand)))
     (insert "  ")
-    (dotimes (x (length cards))
-      (setq card (nth x cards))
-      (if (and hide-down-card (= x 0))
-          (progn
-            (setq value 13)
-            (setq suit 0))
-        (setq value (slot-value card 'value))
-        (setq suit (slot-value card 'suit)))
-      (insert (blackjack--card-face game value suit))
-      (insert " "))
+    (seq-map-indexed
+     (lambda (card index)
+       "Display one of the cards in the dealer's hand."
+       (insert
+        (apply #'blackjack--card-face game
+               (if (and (= index 0) (slot-value dealer-hand 'hide-down-card))
+                   `(,blackjack--card-value-hidden 0)
+                 `(,(slot-value card 'value)
+                   ,(slot-value card 'suit)))))
+       (insert " "))
+     (slot-value dealer-hand 'cards))
     (insert " ⇒  ")
     (insert (number-to-string (blackjack--dealer-hand-value dealer-hand 'soft)))))
 
 (defun blackjack--dealer-hand-value (dealer-hand count-method)
   "Calculates DEALER-HAND cards total value based on COUNT-METHOD."
-  (let ((cards (slot-value dealer-hand 'cards))
-        (hide-down-card (slot-value dealer-hand 'hide-down-card))
-        (total 0) (card))
-    (dotimes (x (length cards))
-      (unless (and hide-down-card (= x 0))
-        (setq card (nth x cards))
-        (setq total (+ total (blackjack--card-val card count-method total)))))
+  (let ((total 0))
+    (seq-map-indexed
+     (lambda (card index)
+       "Value one of the cards in the dealer's hand."
+       (unless (and (= index 0) (slot-value dealer-hand 'hide-down-card))
+         (cl-incf total (blackjack--card-val card count-method total))))
+     (slot-value dealer-hand 'cards))
     (when (and (eq count-method 'soft) (> total 21))
       (setq total (blackjack--dealer-hand-value dealer-hand 'hard)))
     total))
 
 (defun blackjack--draw-player-hands (game)
   "Draw GAME players hands."
-  (let ((player-hands (slot-value game 'player-hands))
-        (player-hand))
-    (dotimes (x (length player-hands))
-      (setq player-hand (nth x player-hands))
-      (blackjack--draw-player-hand game player-hand x))))
+  (seq-map-indexed
+   (apply-partially #'blackjack--draw-player-hand game)
+   (slot-value game 'player-hands)))
 
 (defun blackjack--draw-player-hand (game player-hand index)
   "Draw the GAME PLAYER-HAND using an INDEX."
@@ -727,13 +724,12 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 (defun blackjack--player-hand-cards (game player-hand)
   "Draw GAME PLAYER-HAND cards."
   (let ((cards (slot-value player-hand 'cards))
-        (card) (suit) (value) (out "  "))
-    (dotimes (x (length cards))
-      (setq card (nth x cards))
-      (setq value (slot-value card 'value))
-      (setq suit (slot-value card 'suit))
-      (setq out (concat out (blackjack--card-face game value suit)))
-      (setq out (concat out " ")))
+        (out "  "))
+    (dolist (card cards)
+      (let ((value (slot-value card 'value))  
+            (suit (slot-value card 'suit)))
+        (setq out (concat out (blackjack--card-face game value suit)))
+        (setq out (concat out " "))))
     (setq out (concat out " ⇒  "))
     (setq out (concat out (number-to-string (blackjack--player-hand-value cards 'soft)) "  "))
     out))
@@ -774,10 +770,9 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 
 (defun blackjack--player-hand-value (cards count-method)
   "Calculates CARDS total value based on COUNT-METHOD."
-  (let ((total 0) (card))
-    (dotimes (x (length cards))
-      (setq card (nth x cards))
-      (setq total (+ total (blackjack--card-val card count-method total))))
+  (let ((total 0))
+    (dolist (card cards)
+      (cl-incf total (blackjack--card-val card count-method total)))
     (when (and (eq count-method 'soft) (> total 21))
       (setq total (blackjack--player-hand-value cards 'hard)))
     total))
