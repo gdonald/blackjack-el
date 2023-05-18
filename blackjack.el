@@ -117,16 +117,6 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
    (value :initarg :value :initform 0 :type integer)
    (suit :initarg :suit :initform 0 :type integer)))
 
-(cl-defmethod cl-print-object ((obj blackjack-card) stream)
-  "Print OBJ to STREAM."
-  (princ
-   (format "#<%s id: %d value: %s suit: %s>"
-           (eieio-class-name (eieio-object-class obj))
-           (slot-value obj 'id)
-           (slot-value obj 'value)
-           (slot-value obj 'suit))
-   stream))
-
 (defclass blackjack-hand ()
   ((cards :initarg :cards :initform '() :type list)
    (played :initarg :played :initform nil :type boolean)))
@@ -138,32 +128,8 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
    (payed :initarg :payed :initform nil :type boolean)
    (stood :intiarg :stood :initform nil :type boolean)))
 
-(cl-defmethod cl-print-object ((obj blackjack-player-hand) stream)
-  "Print OBJ to STREAM."
-  (princ
-   (format "#<%s id: %d cards: %s played: %s status: %s payed: %s stood: %s bet: %s>"
-           (eieio-class-name (eieio-object-class obj))
-           (slot-value obj 'id)
-           (slot-value obj 'cards)
-           (slot-value obj 'played)
-           (slot-value obj 'status)
-           (slot-value obj 'payed)
-           (slot-value obj 'stood)
-           (slot-value obj 'bet))
-   stream))
-
 (defclass blackjack-dealer-hand (blackjack-hand)
   ((hide-down-card :initarg :hide-down-card :initform t :type boolean)))
-
-(cl-defmethod cl-print-object ((obj blackjack-dealer-hand) stream)
-  "Print OBJ to STREAM."
-  (princ
-   (format "#<%s cards: %s played: %s hide-down-card: %s>"
-           (eieio-class-name (eieio-object-class obj))
-           (slot-value obj 'cards)
-           (slot-value obj 'played)
-           (slot-value obj 'hide-down-card))
-   stream))
 
 (defclass blackjack-game ()
   ((id :initarg :id :initform 0 :type integer)
