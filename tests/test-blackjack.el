@@ -6,7 +6,6 @@
 ;;; Code:
 
 (load-file "./tests/test-helper.el")
-;;(require 'buttercup)
 (require 'blackjack)
 
 (describe "blackjack-card"
@@ -299,6 +298,53 @@
               (push (blackjack-player-hand) (slot-value game 'player-hands))
               (push (blackjack-player-hand) (slot-value game 'player-hands))
               (expect (blackjack--more-hands-to-play-p game) :to-be t)))
+
+(describe "blackjack--play-more-hands"
+          :var (game)
+
+          (before-each
+           (spy-on 'blackjack--draw-hands)
+           (setf game (blackjack-game :deck-type 'jacks)
+                 player-hand-0 (blackjack-player-hand)
+                 player-hand-1 (blackjack-player-hand)
+                 player-hands '()
+                 card-ace (blackjack-card :value 0)
+                 card-ten (blackjack-card :value 9)
+                 cards-0 '()
+                 cards-1 '())
+           (push card-ace cards-0)
+           (push card-ten cards-0)
+           (blackjack--shuffle game))
+
+          (after-each
+           (expect (slot-value game 'current-player-hand) :to-be 1)
+           (setf game nil
+                 player-hands '()
+                 player-hand-0 nil
+                 player-hand-1 nil
+                 cards-0 '()
+                 cards-1 '()))
+
+          (it "increments current-player-hand and continues non-done player hand"
+              (push card-ten cards-1)
+              (setf (slot-value player-hand-0 'cards) cards-0)
+              (setf (slot-value player-hand-1 'cards) cards-1)
+              (push player-hand-1 player-hands)
+              (push player-hand-0 player-hands)
+              (setf (slot-value game 'player-hands) player-hands)
+              (spy-on 'blackjack--ask-hand-action)
+              (blackjack--play-more-hands game)
+              (expect 'blackjack--ask-hand-action :to-have-been-called))
+          (it "increments current-player-hand and processes done player hand"
+              (push card-ace cards-1)
+              (setf (slot-value player-hand-0 'cards) cards-0)
+              (setf (slot-value player-hand-1 'cards) cards-1)
+              (push player-hand-1 player-hands)
+              (push player-hand-0 player-hands)
+              (setf (slot-value game 'player-hands) player-hands)
+              (spy-on 'blackjack--process)
+              (blackjack--play-more-hands game)
+              (expect 'blackjack--process :to-have-been-called)))
 
 (provide 'test-blackjack)
 
