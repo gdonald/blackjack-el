@@ -9,9 +9,9 @@
 (require 'blackjack)
 
 (setf card-A (blackjack-card :value 0)
-      card-5 (blackjack-card :value 4)
-      card-seven (blackjack-card :value 6)
-      card-ten (blackjack-card :value 9))
+      card-6 (blackjack-card :value 5)
+      card-7 (blackjack-card :value 6)
+      card-T (blackjack-card :value 9))
 
 (describe "blackjack-card"
           :var ((card (blackjack-card)))
@@ -234,7 +234,7 @@
           (describe "with a player hand value of 18"
 
                     (before-each
-                     (setf (slot-value player-hand 'cards) (list card-A card-seven)))
+                     (setf (slot-value player-hand 'cards) (list card-A card-7)))
 
                     (it "pays winning player hands"
                         (spy-on 'blackjack--pay-won-hand :and-call-through)
@@ -266,13 +266,14 @@
           :var ((game (blackjack-game))
                 (player-hand (blackjack-player-hand)))
 
+          (before-each
+           (spy-on 'blackjack--no-more-actions-p :and-return-value t))
+          
           (it "sets the player hand to played"
-              (spy-on 'blackjack--no-more-actions-p :and-return-value t)
               (expect (blackjack--player-hand-done-p game player-hand) :to-be t)
               (expect (slot-value player-hand 'played) :to-be t))
 
           (it "collects a busted player hand"
-              (spy-on 'blackjack--no-more-actions-p :and-return-value t)
               (spy-on 'blackjack--player-hand-is-busted-p :and-return-value t)
               (spy-on 'blackjack--collect-busted-hand)
               (expect (blackjack--player-hand-done-p game player-hand) :to-be t)
@@ -295,16 +296,14 @@
               (expect (blackjack--more-hands-to-play-p game) :to-be nil))
 
           (it "returns non-nil when there are more hands to play"
-              (push (blackjack-player-hand) (slot-value game 'player-hands))
-              (push (blackjack-player-hand) (slot-value game 'player-hands))
+              (setf (slot-value game 'player-hands) (list (blackjack-player-hand) (blackjack-player-hand)))
               (expect (blackjack--more-hands-to-play-p game) :to-be t)))
 
 (describe "blackjack--play-more-hands"
           :var ((game (blackjack-game :deck-type 'jacks))
                 (player-hand-0 (blackjack-player-hand))
                 (player-hand-1 (blackjack-player-hand))
-                (player-hands '())
-                (cards-0 '())
+                (cards-0 (list card-A card-T))
                 (cards-1 '()))
 
           (before-all
@@ -312,20 +311,16 @@
 
           (before-each
            (spy-on 'blackjack--draw-hands)
-           (push card-A cards-0)
-           (push card-ten cards-0)
            (setf (slot-value game 'current-player-hand) 0))
 
           (after-each
            (expect (slot-value game 'current-player-hand) :to-be 1))
 
           (it "increments current-player-hand and continues"
-              (push card-ten cards-1)
+              (push card-T cards-1)
               (setf (slot-value player-hand-0 'cards) cards-0)
               (setf (slot-value player-hand-1 'cards) cards-1)
-              (push player-hand-1 player-hands)
-              (push player-hand-0 player-hands)
-              (setf (slot-value game 'player-hands) player-hands)
+              (setf (slot-value game 'player-hands) (list player-hand-0 player-hand-1))
               (spy-on 'blackjack--ask-hand-action)
               (blackjack--play-more-hands game)
               (expect 'blackjack--ask-hand-action :to-have-been-called))
@@ -334,54 +329,45 @@
               (push card-A cards-1)
               (setf (slot-value player-hand-0 'cards) cards-0)
               (setf (slot-value player-hand-1 'cards) cards-1)
-              (push player-hand-1 player-hands)
-              (push player-hand-0 player-hands)
-              (setf (slot-value game 'player-hands) player-hands)
+              (setf (slot-value game 'player-hands) (list player-hand-0 player-hand-1))
               (spy-on 'blackjack--process)
               (blackjack--play-more-hands game)
               (expect 'blackjack--process :to-have-been-called)))
 
 (describe "blackjack--need-to-play-dealer-hand-p"
           :var ((game (blackjack-game))
-                (player-hand (blackjack-player-hand))
-                (player-hands '())
-                (cards '()))
+                (player-hand (blackjack-player-hand)))
 
           (before-each
-           (push card-ten cards))
+           (setf cards (list card-T)))
 
           (it "returns non-nil when player hand is not busted or blackjack"
-              (push card-ten cards)
+              (push card-T cards)
               (setf (slot-value player-hand 'cards) cards)
-              (push player-hand player-hands)
-              (setf (slot-value game 'player-hands) player-hands)
+              (setf (slot-value game 'player-hands) (list player-hand))
               (expect (blackjack--need-to-play-dealer-hand-p game) :to-be t))
 
           (describe "returns nil when"
                     (after-each
                      (setf (slot-value player-hand 'cards) cards)
-                     (push player-hand player-hands)
-                     (setf (slot-value game 'player-hands) player-hands)
+                     (setf (slot-value game 'player-hands) (list player-hand))
                      (expect (blackjack--need-to-play-dealer-hand-p game) :to-be nil))
 
                     (it "player hand is blackjack"
                         (push card-A cards))
 
                     (it "player hand is busted"
-                        (push card-ten cards)
-                        (push card-ten cards))))
+                        (push card-T cards)
+                        (push card-T cards))))
 
 (describe "blackjack--dealer-hand-counts"
-          :var ((dealer-hand (blackjack-dealer-hand))
-                (cards (list card-A card-A)))
+          :var ((dealer-hand (blackjack-dealer-hand :cards (list card-A card-A))))
 
           (it "when hiding down card returns (11 1)"
-              (setf (slot-value dealer-hand 'cards) cards)
               (expect (slot-value dealer-hand 'hide-down-card) :to-be t)
               (expect (blackjack--dealer-hand-counts dealer-hand) :to-equal '(11 1)))
 
           (it "when showing down card returns (12 2)"
-              (setf (slot-value dealer-hand 'cards) cards)
               (setf (slot-value dealer-hand 'hide-down-card) nil)
               (expect (blackjack--dealer-hand-counts dealer-hand) :to-equal '(12 2))))
 
@@ -392,24 +378,16 @@
           (before-all
            (blackjack--shuffle game))
 
-          (before-each
-           (setf cards '()))
+          (after-each
+           (setf (slot-value game 'dealer-hand) dealer-hand)
+           (blackjack--deal-required-cards game)
+           (expect (length (slot-value (slot-value game 'dealer-hand) 'cards)) :to-be 3))
+          
+          (it "with a hard count deals 1 more card"
+              (setf (slot-value dealer-hand 'cards) (list card-T card-6)))
 
-          (it "with a hard count deals 2 more cards"
-              (push card-ten cards)
-              (push card-5 cards)
-              (setf (slot-value dealer-hand 'cards) cards)
-              (setf (slot-value game 'dealer-hand) dealer-hand)
-              (blackjack--deal-required-cards game)
-              (expect (length (slot-value (slot-value game 'dealer-hand) 'cards)) :to-be 4))
-
-          (it "with a soft count ace deals 2 more cards"
-              (push card-A cards)
-              (push card-5 cards)
-              (setf (slot-value dealer-hand 'cards) cards)
-              (setf (slot-value game 'dealer-hand) dealer-hand)
-              (blackjack--deal-required-cards game)
-              (expect (length (slot-value (slot-value game 'dealer-hand) 'cards)) :to-be 4)))
+          (it "with a soft-counted ace deals 1 more card"
+              (setf (slot-value dealer-hand 'cards) (list card-A card-6))))
 
 (provide 'test-blackjack)
 
