@@ -432,6 +432,92 @@
               (blackjack--process game)
               (expect 'blackjack--play-dealer-hand :to-have-been-called)))
 
+(describe "blackjack--hit"
+          :var ((game (blackjack-game))
+                (player-hand (blackjack-player-hand)))
+
+          (before-all
+           (blackjack--shuffle game))
+
+          (before-each
+           (spy-on 'blackjack--draw-hands)
+           (spy-on 'blackjack--ask-hand-action)
+           (setf (slot-value game 'player-hands) (list player-hand)))
+          
+          (it "adds a card to the current player hand"
+              (spy-on 'blackjack--deal-card)
+              (blackjack--hit game)
+              (expect 'blackjack--deal-card :to-have-been-called)
+              (expect (slot-value game 'current-menu) :to-be 'hand))
+
+          (it "processes done hand"
+              (spy-on 'blackjack--player-hand-done-p :and-return-value t)
+              (spy-on 'blackjack--process)
+              (blackjack--hit game)
+              (expect 'blackjack--process :to-have-been-called)))
+
+(describe "blackjack--double"
+          :var ((game (blackjack-game))
+                (player-hand (blackjack-player-hand :bet 500)))
+
+          (before-all
+           (blackjack--shuffle game))
+
+          (before-each
+           (setf (slot-value game 'player-hands) (list player-hand)))
+
+          (it "doubles bet and takes one card"
+              (spy-on 'blackjack--play-dealer-hand)
+              (spy-on 'blackjack--deal-card)
+              (blackjack--double game)
+              (expect 'blackjack--deal-card :to-have-been-called)
+              (expect (slot-value player-hand 'bet) :to-be 1000)
+              (expect (slot-value player-hand 'played) :to-be t))
+
+          (it "asks hand action when not done"
+              (spy-on 'blackjack--ask-hand-action)
+              (spy-on 'blackjack--player-hand-done-p :and-return-value nil)
+              (blackjack--double game)
+              (expect 'blackjack--ask-hand-action :to-have-been-called)))
+
+(describe "blackjack--stand"
+          :var ((game (blackjack-game))
+                (player-hand (blackjack-player-hand)))
+
+          (before-each
+           (setf (slot-value game 'player-hands) (list player-hand)))
+
+          (it "ends the hand"
+              (spy-on 'blackjack--process)
+              (blackjack--stand game)
+              (expect 'blackjack--process :to-have-been-called)
+              (expect (slot-value player-hand 'stood) :to-be t)
+              (expect (slot-value player-hand 'played) :to-be t)))
+
+(describe "blackjack--split"
+          :var ((game (blackjack-game))
+                (player-hand (blackjack-player-hand)))
+
+          (before-all
+           (blackjack--shuffle game))
+          
+          (before-each
+           (spy-on 'blackjack--draw-hands)
+           (setf (slot-value player-hand 'cards) (list card-A card-A))
+           (setf (slot-value game 'player-hands) (list player-hand)))
+
+          (it "splits into two hands"
+              (spy-on 'blackjack--ask-hand-action)
+              (blackjack--split game)
+              (expect (length (slot-value game 'player-hands)) :to-be 2)
+              (expect (slot-value game 'current-menu) :to-be 'hand))
+
+          (it "processes done hand"
+              (spy-on 'blackjack--player-hand-done-p :and-return-value t)
+              (spy-on 'blackjack--process)
+              (blackjack--split game)
+              (expect 'blackjack--process :to-have-been-called)))
+
 (provide 'test-blackjack)
 
 ;;; test-blackjack.el ends here
