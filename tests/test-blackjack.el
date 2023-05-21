@@ -389,6 +389,49 @@
           (it "with a soft-counted ace deals 1 more card"
               (setf (slot-value dealer-hand 'cards) (list card-A card-6))))
 
+(describe "blackjack--play-dealer-hand"
+          :var ((game (blackjack-game))
+                (dealer-hand (blackjack-dealer-hand)))
+
+          (before-each
+           (setf (slot-value game 'dealer-hand) dealer-hand)
+           (spy-on 'blackjack--ask-game-action))
+          
+          (it "is always set to played and player hands payed"
+              (spy-on 'blackjack--pay-hands)
+              (blackjack--play-dealer-hand game)
+              (expect (slot-value dealer-hand 'hide-down-card) :to-be t)
+              (expect (slot-value game 'current-menu) :to-be 'game)
+              (expect (slot-value dealer-hand 'played) :to-be t)
+              (expect 'blackjack--pay-hands :to-have-been-called))
+
+          (it "dealer hand is dealt required cards"
+              (spy-on 'blackjack--deal-required-cards)
+              (spy-on 'blackjack--need-to-play-dealer-hand-p :and-return-value t)
+              (blackjack--play-dealer-hand game)
+              (expect (slot-value dealer-hand 'hide-down-card) :to-be nil)
+              (expect 'blackjack--deal-required-cards :to-have-been-called))
+
+          (it "unhides down card when blackjack"
+              (spy-on 'blackjack--hand-is-blackjack-p :and-return-value t)
+              (blackjack--play-dealer-hand game)
+              (expect (slot-value dealer-hand 'hide-down-card) :to-be nil)))
+
+(describe "blackjack--process"
+          :var ((game (blackjack-game)))
+          
+          (it "plays more player hands when more hands to play"
+              (spy-on 'blackjack--more-hands-to-play-p :and-return-value t)
+              (spy-on 'blackjack--play-more-hands)
+              (blackjack--process game)
+              (expect 'blackjack--play-more-hands :to-have-been-called))
+
+          (it "plays dealer hand when no more hands to play"
+              (spy-on 'blackjack--more-hands-to-play-p :and-return-value nil)
+              (spy-on 'blackjack--play-dealer-hand)
+              (blackjack--process game)
+              (expect 'blackjack--play-dealer-hand :to-have-been-called)))
+
 (provide 'test-blackjack)
 
 ;;; test-blackjack.el ends here
