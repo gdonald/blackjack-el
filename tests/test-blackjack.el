@@ -268,7 +268,7 @@
 
           (before-each
            (spy-on 'blackjack--no-more-actions-p :and-return-value t))
-          
+
           (it "sets the player hand to played"
               (expect (blackjack--player-hand-done-p game player-hand) :to-be t)
               (expect (slot-value player-hand 'played) :to-be t))
@@ -382,7 +382,7 @@
            (setf (slot-value game 'dealer-hand) dealer-hand)
            (blackjack--deal-required-cards game)
            (expect (length (slot-value (slot-value game 'dealer-hand) 'cards)) :to-be 3))
-          
+
           (it "with a hard count deals 1 more card"
               (setf (slot-value dealer-hand 'cards) (list card-T card-6)))
 
@@ -396,7 +396,7 @@
           (before-each
            (setf (slot-value game 'dealer-hand) dealer-hand)
            (spy-on 'blackjack--ask-game-action))
-          
+
           (it "is always set to played and player hands payed"
               (spy-on 'blackjack--pay-hands)
               (blackjack--play-dealer-hand game)
@@ -419,7 +419,7 @@
 
 (describe "blackjack--process"
           :var ((game (blackjack-game)))
-          
+
           (it "plays more player hands when more hands to play"
               (spy-on 'blackjack--more-hands-to-play-p :and-return-value t)
               (spy-on 'blackjack--play-more-hands)
@@ -443,7 +443,7 @@
            (spy-on 'blackjack--draw-hands)
            (spy-on 'blackjack--ask-hand-action)
            (setf (slot-value game 'player-hands) (list player-hand)))
-          
+
           (it "adds a card to the current player hand"
               (spy-on 'blackjack--deal-card)
               (blackjack--hit game)
@@ -495,12 +495,12 @@
               (expect (slot-value player-hand 'played) :to-be t)))
 
 (describe "blackjack--split"
-          :var ((game (blackjack-game))
+          :var ((game (blackjack-game :deck-type 'aces))
                 (player-hand (blackjack-player-hand)))
 
           (before-all
            (blackjack--shuffle game))
-          
+
           (before-each
            (spy-on 'blackjack--draw-hands)
            (setf (slot-value player-hand 'cards) (list card-A card-A))
@@ -517,6 +517,45 @@
               (spy-on 'blackjack--process)
               (blackjack--split game)
               (expect 'blackjack--process :to-have-been-called)))
+
+(describe "blackjack--hand-can-hit-p"
+          :var ((game (blackjack-game))
+                (player-hand (blackjack-player-hand)))
+
+          (it "returns nil for non-hand menu"
+              (expect (blackjack--hand-can-hit-p game) :to-be nil))
+
+          (describe "when menu is 'hand"
+
+                    (before-each
+                     (setf (slot-value game 'current-menu) 'hand)
+                     (setf (slot-value game 'player-hands) (list player-hand)))
+
+                    (it "returns non-nil for a hand that can be hit"
+                        (expect (blackjack--hand-can-hit-p game) :to-be t))
+
+                    (it "returns nil for a played hand"
+                        (setf (slot-value player-hand 'played) t)
+                        (expect (blackjack--hand-can-hit-p game) :to-be nil))
+
+                    (it "returns nil for a stood hand"
+                        (setf (slot-value player-hand 'stood) t)
+                        (expect (blackjack--hand-can-hit-p game) :to-be nil))
+
+                    (it "returns nil for a hand total of 21"
+                        (setf (slot-value player-hand 'cards) (list card-7 card-7 card-7))
+                        (setf (slot-value game 'player-hands) (list player-hand))
+                        (expect (blackjack--hand-can-hit-p game) :to-be nil))
+
+                    (it "returns nil for a blackjack hand"
+                        (setf (slot-value player-hand 'cards) (list card-A card-T))
+                        (setf (slot-value game 'player-hands) (list player-hand))
+                        (expect (blackjack--hand-can-hit-p game) :to-be nil))
+
+                    (it "returns nil for a busted hand"
+                        (setf (slot-value player-hand 'cards) (list card-T card-T card-T))
+                        (setf (slot-value game 'player-hands) (list player-hand))
+                        (expect (blackjack--hand-can-hit-p game) :to-be nil))))
 
 (provide 'test-blackjack)
 

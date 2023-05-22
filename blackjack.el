@@ -543,53 +543,54 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 
 (defun blackjack--hand-can-hit-p (game)
   "Return non-nil if the GAME current hand can hit."
-  (let* ((player-hand (blackjack--current-player-hand game))
-         (cards (slot-value player-hand 'cards)))
-    (and
-     (blackjack--valid-menu-action-p game 'hand)
-     (not
-      (or
-       (slot-value player-hand 'played)
-       (slot-value player-hand 'stood)
-       (= 21 (blackjack--player-hand-value cards 'hard))
-       (blackjack--hand-is-blackjack-p cards)
-       (blackjack--player-hand-is-busted-p cards))))))
+  (when (blackjack--valid-menu-action-p game 'hand)
+    (let* ((player-hand (blackjack--current-player-hand game))
+           (cards (slot-value player-hand 'cards)))
+      (not
+       (or
+        (slot-value player-hand 'played)
+        (slot-value player-hand 'stood)
+        (= 21 (blackjack--player-hand-value cards 'hard))
+        (blackjack--hand-is-blackjack-p cards)
+        (blackjack--player-hand-is-busted-p cards))))))
 
 (defun blackjack--hand-can-stand-p (game)
   "Return non-nil if the GAME current hand can stand."
-  (let* ((player-hand (blackjack--current-player-hand game))
-         (cards (slot-value player-hand 'cards)))
-    (and
-     (blackjack--valid-menu-action-p game 'hand)
-     (not
-      (or
-       (slot-value player-hand 'stood)
-       (blackjack--player-hand-is-busted-p cards)
-       (blackjack--hand-is-blackjack-p cards))))))
+  (when (blackjack--valid-menu-action-p game 'hand)
+    (let* ((player-hand (blackjack--current-player-hand game))
+           (cards (slot-value player-hand 'cards)))
+      (not
+       (or
+        (slot-value player-hand 'stood)
+        (blackjack--player-hand-is-busted-p cards)
+        (blackjack--hand-is-blackjack-p cards))))))
 
 (defun blackjack--hand-can-split-p (game)
   "Return non-nil if the GAME current hand can split."
-  (let* ((player-hand (blackjack--current-player-hand game))
-         (cards (slot-value player-hand 'cards))
-         (card-0 (nth 0 cards))
-         (card-1 (nth 1 cards)))
-    (and
-     (blackjack--valid-menu-action-p game 'hand)
-     (not (slot-value player-hand 'stood))
-     (< (length (slot-value game 'player-hands)) 7)
-     (>= (slot-value game 'money) (+ (blackjack--all-bets game) (slot-value player-hand 'bet)))
-     (eq (length cards) 2)
-     (eq (slot-value card-0 'value) (slot-value card-1 'value)))))
+  (when (blackjack--valid-menu-action-p game 'hand)
+    (let* ((player-hand (blackjack--current-player-hand game))
+           (cards (slot-value player-hand 'cards))
+           (card-0 (nth 0 cards))
+           (card-1 (nth 1 cards)))
+      (and
+       (not (slot-value player-hand 'stood))
+       (< (length (slot-value game 'player-hands)) 7)
+       (>= (slot-value game 'money) (+ (blackjack--all-bets game) (slot-value player-hand 'bet)))
+       (eq (length cards) 2)
+       (eq (slot-value card-0 'value) (slot-value card-1 'value))))))
 
 (defun blackjack--hand-can-double-p (game)
   "Return non-nil if the GAME current hand can double."
-  (let* ((player-hand (blackjack--current-player-hand game))
-         (cards (slot-value player-hand 'cards)))
-    (and
-     (blackjack--valid-menu-action-p game 'hand)
-     (>= (slot-value game 'money) (+ (blackjack--all-bets game) (slot-value player-hand 'bet)))
-     (not (or (slot-value player-hand 'stood) (not (eq 2 (length cards)))
-              (blackjack--hand-is-blackjack-p cards))))))
+  (when (blackjack--valid-menu-action-p game 'hand)
+    (let* ((player-hand (blackjack--current-player-hand game))
+           (cards (slot-value player-hand 'cards)))
+      (and
+       (>= (slot-value game 'money) (+ (blackjack--all-bets game) (slot-value player-hand 'bet)))
+       (not
+        (or
+         (slot-value player-hand 'stood)
+         (not (eq 2 (length cards)))
+         (blackjack--hand-is-blackjack-p cards)))))))
 
 (defun blackjack--current-player-hand (game)
   "Return current GAME player hand."
