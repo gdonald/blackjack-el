@@ -557,6 +557,81 @@
                         (setf (slot-value game 'player-hands) (list player-hand))
                         (expect (blackjack--hand-can-hit-p game) :to-be nil))))
 
+(describe "blackjack--hand-can-stand-p"
+          :var ((game (blackjack-game))
+                (player-hand (blackjack-player-hand)))
+
+          (it "returns nil for non-hand menu"
+              (expect (blackjack--hand-can-stand-p game) :to-be nil))
+
+          (describe "when menu is 'hand"
+
+                    (before-each
+                     (setf (slot-value game 'current-menu) 'hand)
+                     (setf (slot-value game 'player-hands) (list player-hand)))
+
+                    (it "returns non-nil for a hand that can be stand"
+                        (expect (blackjack--hand-can-stand-p game) :to-be t))
+
+                    (it "returns nil for a stood hand"
+                        (setf (slot-value player-hand 'stood) t)
+                        (expect (blackjack--hand-can-stand-p game) :to-be nil))
+
+                    (it "returns nil for a blackjack hand"
+                        (setf (slot-value player-hand 'cards) (list card-A card-T))
+                        (setf (slot-value game 'player-hands) (list player-hand))
+                        (expect (blackjack--hand-can-stand-p game) :to-be nil))
+
+                    (it "returns nil for a busted hand"
+                        (setf (slot-value player-hand 'cards) (list card-T card-T card-T))
+                        (setf (slot-value game 'player-hands) (list player-hand))
+                        (expect (blackjack--hand-can-stand-p game) :to-be nil))))
+
+(describe "blackjack--hand-can-split-p"
+          :var ((game (blackjack-game))
+                (player-hand (blackjack-player-hand :bet 500)))
+
+          (it "returns nil for non-hand menu"
+              (expect (blackjack--hand-can-split-p game) :to-be nil))
+
+          (describe "when menu is 'hand"
+
+                    (before-each
+                     (setf (slot-value game 'current-menu) 'hand)
+                     (setf (slot-value player-hand 'cards) (list card-A card-A))
+                     (setf (slot-value game 'player-hands) (list player-hand)))
+
+                    (after-each
+                     (setf (slot-value game 'money) 1000)
+                     (setf (slot-value player-hand 'stood) nil))
+
+                    (it "returns non-nil for a hand that can be split"
+                        (expect (blackjack--hand-can-split-p game) :to-be t))
+
+                    (it "returns nil for a stood hand"
+                        (setf (slot-value player-hand 'stood) t)
+                        (expect (blackjack--hand-can-split-p game) :to-be nil))
+
+                    (it "returns nil for too many split hands"
+                        (setf (slot-value game 'player-hands)
+                              (make-list (slot-value game 'max-player-hands)
+                                         (blackjack-player-hand :cards (list card-A card-A))))
+                        (expect (blackjack--hand-can-split-p game) :to-be nil))
+
+                    (it "returns nil when not enough money"
+                        (setf (slot-value game 'money) 999)
+                        (expect (blackjack--hand-can-split-p game) :to-be nil))
+
+                    (it "returns nil for not having two cards"
+                        (setf (slot-value player-hand 'cards) (list card-T card-T card-T))
+                        (setf (slot-value game 'player-hands) (list player-hand))
+                        (expect (blackjack--hand-can-split-p game) :to-be nil))
+
+                    (it "returns nil for not having matching cards"
+                        (setf (slot-value player-hand 'cards) (list card-A card-T))
+                        (setf (slot-value game 'player-hands) (list player-hand))
+                        (expect (blackjack--hand-can-split-p game) :to-be nil))))
+
 (provide 'test-blackjack)
 
 ;;; test-blackjack.el ends here
