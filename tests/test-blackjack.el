@@ -797,6 +797,100 @@
                         (expect 'blackjack--save :to-have-been-called)
                         (expect (slot-value game 'current-menu) :to-be 'game))))
 
+(describe "blackjack--player-hand-is-busted-p"
+          (describe "when soft hand count is less than 21"
+                    (it "returns nil"
+                        (expect (blackjack--player-hand-is-busted-p (list card-A card-A)) :to-be nil)))
+
+          (describe "when soft hand count is 21"
+                    (it "returns nil"
+                        (expect (blackjack--player-hand-is-busted-p (list card-A card-T)) :to-be nil)))
+
+          (describe "when soft hand count is greater than 21"
+                    (it "returns non-nil"
+                        (expect (blackjack--player-hand-is-busted-p (list card-T card-T card-T)) :to-be t))))
+
+(describe "blackjack--dealer-hand-is-busted-p"
+          :var ((dealer-hand (blackjack-dealer-hand)))
+
+          (describe "with a hidden down card"
+                    (before-each
+                     (setf (slot-value dealer-hand 'hide-down-card) t))
+
+                    (after-each
+                     (expect (blackjack--dealer-hand-is-busted-p dealer-hand) :to-be nil))
+
+                    (describe "when soft hand count is less than 21"
+                              (it "returns nil"
+                                  (setf (slot-value dealer-hand 'cards) (list card-A card-A))))
+
+                    (describe "when soft hand count is 21"
+                              (it "returns nil"
+                                  (setf (slot-value dealer-hand 'cards) (list card-A card-T))))
+
+                    (describe "when soft hand count is greater than 21"
+                              (it "returns nil"
+                                  (setf (slot-value dealer-hand 'cards) (list card-T card-T card-T)))))
+
+          (describe "with a unhidden down card"
+                    (before-each
+                     (setf (slot-value dealer-hand 'hide-down-card) nil))
+
+                    (describe "when soft hand count is less than 21"
+                              (it "returns nil"
+                                  (setf (slot-value dealer-hand 'cards) (list card-A card-A))
+                                  (expect (blackjack--dealer-hand-is-busted-p dealer-hand) :to-be nil)))
+
+                    (describe "when soft hand count is 21"
+                              (it "returns nil"
+                                  (setf (slot-value dealer-hand 'cards) (list card-A card-T))
+                                  (expect (blackjack--dealer-hand-is-busted-p dealer-hand) :to-be nil)))
+
+                    (describe "when soft hand count is greater than 21"
+                              (it "returns non-nil "
+                                  (setf (slot-value dealer-hand 'cards) (list card-T card-T card-T))
+                                  (expect (blackjack--dealer-hand-is-busted-p dealer-hand) :to-be t)))))
+
+(describe "blackjack--hand-is-blackjack-p"
+          (describe "with two aces"
+                    (it "returns nil"
+                        (expect (blackjack--hand-is-blackjack-p (list card-A card-A)) :to-be nil)))
+
+          (describe "with an ace and a ten"
+                    (it "returns non-nil"
+                        (expect (blackjack--hand-is-blackjack-p (list card-A card-T)) :to-be t)))
+
+          (describe "with a ten and an ace"
+                    (it "returns non-nil"
+                        (expect (blackjack--hand-is-blackjack-p (list card-T card-A)) :to-be t)))
+
+          (describe "with three cards"
+                    (it "returns nil"
+                        (expect (blackjack--hand-is-blackjack-p (list card-A card-T card-T)) :to-be nil))))
+
+(describe "blackjack--dealer-upcard-is-ace-p"
+          :var ((dealer-hand (blackjack-dealer-hand)))
+
+          (describe "when upcard is an ace"
+                    (it "returns non-nil"
+                        (setf (slot-value dealer-hand 'cards) (list card-T card-A))
+                        (expect (blackjack--dealer-upcard-is-ace-p dealer-hand) :to-be t)))
+
+          (describe "when upcard is not an ace"
+                    (it "returns nil"
+                        (setf (slot-value dealer-hand 'cards) (list card-A card-T))
+                        (expect (blackjack--dealer-upcard-is-ace-p dealer-hand) :to-be nil))))
+
+(describe "blackjack--down-card"
+          (it "is a constant"
+              (expect blackjack--down-card :to-equal '(13 0))))
+
+(describe "blackjack--draw-dealer-hand"
+          :var ((game (blackjack-game))
+                (dealer-hand (blackjack-dealer-hand)))
+          ;; TODO
+          )
+
 ;; (describe "blackjack--new-bet-menu"
 ;;           (before-all
 ;;            (noninteractive t)

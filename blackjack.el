@@ -682,8 +682,8 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
   "Return non-nil if DEALER-HAND up-card is an ace."
   (blackjack--is-ace-p (nth 1 (slot-value dealer-hand 'cards))))
 
-(defconst blackjack--card-value-hidden 13
-  "Token card \"value\" representing a hidden card.")
+(defconst blackjack--down-card '(13 0)
+  "Hidden card location in faces array.")
 
 (defun blackjack--draw-dealer-hand (game)
   "Draw the GAME dealer-hand."
@@ -695,7 +695,7 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
        (insert
         (apply #'blackjack--card-face game
                (if (and (= index 0) (slot-value dealer-hand 'hide-down-card))
-                   `(,blackjack--card-value-hidden 0)
+                   blackjack--down-card
                  `(,(slot-value card 'value)
                    ,(slot-value card 'suit)))))
        (insert " "))
