@@ -8,7 +8,7 @@ This package lets you play Blackjack in Emacs.
 
 #### If you use `use-package`:
 
-Add a new entry in your .emacs or init.el:
+Assuming you have ![MELPA configured](https://melpa.org/#/getting-started), you can add a new entry to your .emacs or init.el:
 
     (use-package blackjack
       :ensure t)
@@ -35,9 +35,9 @@ If you run out of money, delete `blackjack.txt` and restart blackjack.  You will
 
 ### Screenshots:
 
-![Blackjack](https://raw.githubusercontent.com/gdonald/blackjack-el/main/ss1.png)
+![Blackjack](https://raw.githubusercontent.com/gdonald/blackjack-el/main/imgs/ss1.png)
 
-![Blackjack](https://raw.githubusercontent.com/gdonald/blackjack-el/main/ss2.png)
+![Blackjack](https://raw.githubusercontent.com/gdonald/blackjack-el/main/imgs/ss2.png)
 
 ### Bugs / Issues / Feature Requests
 
@@ -51,7 +51,7 @@ Please report any bugs or issues you find:
 
 ### Alternative Implementations:
 
-I've written Blackjack in several other languages:
+Code for Blackjack in other programming languages:
 
 - [Ruby](https://github.com/gdonald/console-blackjack-ruby)
 - [Rust](https://github.com/gdonald/console-blackjack-rust)
