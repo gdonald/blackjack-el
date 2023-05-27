@@ -8,7 +8,7 @@ This package lets you play Blackjack in Emacs.
 
 #### If you use `use-package`:
 
-Assuming you have ![MELPA configured](https://melpa.org/#/getting-started), you can add a new entry to your .emacs or init.el:
+Assuming you have [MELPA configured](https://melpa.org/#/getting-started), you can add a new entry to your .emacs or init.el:
 
     (use-package blackjack
       :ensure t)
