@@ -885,11 +885,96 @@
           (it "is a constant"
               (expect blackjack--down-card :to-equal '(13 0))))
 
+(describe "blackjack--dealer-hand-to-str"
+          :var ((game (blackjack-game))
+                (dealer-hand (blackjack-dealer-hand)))
+
+          (describe "with an ace and a ten"
+                    (it "returns dealer hand cards as a string"
+                        (setf (slot-value dealer-hand 'cards) (list card-A card-T))
+                        (setf (slot-value game 'dealer-hand) dealer-hand)
+                        (expect (blackjack--dealer-hand-to-str game) :to-equal "  ?? T♠  ⇒  10")))
+
+          (describe "with unhidden down card"
+                    (it "returns dealer hand cards as a string"
+                        (setf (slot-value dealer-hand 'hide-down-card) nil)
+                        (setf (slot-value dealer-hand 'cards) (list card-A card-T))
+                        (setf (slot-value game 'dealer-hand) dealer-hand)
+                        (expect (blackjack--dealer-hand-to-str game) :to-equal "  A♠ T♠  ⇒  21"))))
+
 (describe "blackjack--draw-dealer-hand"
           :var ((game (blackjack-game))
                 (dealer-hand (blackjack-dealer-hand)))
-          ;; TODO
-          )
+
+          (before-each
+           (setf (slot-value game 'dealer-hand) dealer-hand))
+
+          (it "inserts dealer hand"
+              (spy-on 'insert)
+              (spy-on 'blackjack--dealer-hand-to-str :and-return-value "  ?? T♠  ⇒  10")
+              (blackjack--draw-dealer-hand game)
+              (expect 'blackjack--dealer-hand-to-str :to-have-been-called)
+              (expect 'insert :to-have-been-called-with "  ?? T♠  ⇒  10")))
+
+(describe "blackjack--dealer-hand-value"
+          :var ((dealer-hand (blackjack-dealer-hand)))
+
+          (before-each
+           (setf (slot-value dealer-hand 'cards) (list card-A card-T)))
+
+          (describe "when soft count"
+                    (describe "with down card hidden"
+                              (it "returns 10"
+                                  (setf (slot-value dealer-hand 'hide-down-card) t)
+                                  (expect (blackjack--dealer-hand-value dealer-hand 'soft) :to-be 10)))
+
+                    (describe "with down card unhidden"
+                              (it "returns 21"
+                                  (setf (slot-value dealer-hand 'hide-down-card) nil)
+                                  (expect (blackjack--dealer-hand-value dealer-hand 'soft) :to-be 21))))
+
+          (describe "when hard count"
+                    (describe "with down card hidden"
+                              (it "returns 10"
+                                  (setf (slot-value dealer-hand 'hide-down-card) t)
+                                  (expect (blackjack--dealer-hand-value dealer-hand 'hard) :to-be 10)))
+
+                    (describe "with down card unhidden"
+                              (it "returns 21"
+                                  (setf (slot-value dealer-hand 'hide-down-card) nil)
+                                  (expect (blackjack--dealer-hand-value dealer-hand 'hard) :to-be 11)))))
+
+(describe "blackjack--draw-player-hands"
+          :var ((game (blackjack-game))
+                (player-hand-0 (blackjack-player-hand))
+                (player-hand-1 (blackjack-player-hand)))
+
+          (before-each
+           (setf (slot-value game 'player-hands) (list player-hand-0 player-hand-1)))
+
+          (it "calls blackjack--draw-player-hand"
+              (spy-on 'blackjack--draw-player-hand)
+              (blackjack--draw-player-hands game)
+              (expect 'blackjack--draw-player-hand :to-have-been-called-times 2)))
+
+(describe "blackjack--player-hand-to-str"
+          :var ((game (blackjack-game))
+                (player-hand (blackjack-player-hand :bet 500)))
+
+          (it "returns player hand as a string"
+              (setf (slot-value player-hand 'cards) (list card-A card-T))
+              (setf (slot-value game 'player-hands) (list player-hand))
+              (expect (blackjack--player-hand-to-str game player-hand 0) :to-equal "  A♠ T♠  ⇒  21  $5.00 ⇐  \n\n")))
+
+(describe "blackjack--draw-player-hand"
+          :var ((game (blackjack-game))
+                (player-hand (blackjack-player-hand)))
+
+          (it "inserts player hand"
+              (spy-on 'insert)
+              (spy-on 'blackjack--player-hand-to-str :and-return-value "  A♠ T♠  ⇒  21  $5.00 ⇐  \n\n")
+              (blackjack--draw-player-hand game player-hand 0)
+              (expect 'insert :to-have-been-called-with "  A♠ T♠  ⇒  21  $5.00 ⇐  \n\n")))
 
 ;; (describe "blackjack--new-bet-menu"
 ;;           (before-all

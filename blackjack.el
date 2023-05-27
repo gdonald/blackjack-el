@@ -458,7 +458,7 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
     (with-slots (dealer-hand current-menu) game  
       (with-slots (cards hide-down-card played) dealer-hand
         (when (or playing 
-                 (blackjack--hand-is-blackjack-p cards))
+                  (blackjack--hand-is-blackjack-p cards))
           (setf hide-down-card nil))
         (when playing
           (blackjack--deal-required-cards game))
@@ -589,7 +589,7 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 (defun blackjack--current-player-hand (game)
   "Return current GAME player hand."
   (with-slots (current-player-hand player-hands) game
-   (nth current-player-hand player-hands)))
+    (nth current-player-hand player-hands)))
 
 (defun blackjack--all-bets (game)
   "Return the sum of all GAME player hand bets."
@@ -670,24 +670,28 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 (defconst blackjack--down-card '(13 0)
   "Hidden card location in faces array.")
 
+(defun blackjack--dealer-hand-to-str (game)
+  "Return GAME dealer-hand as a string."
+  (let ((str "  "))
+    (with-slots (dealer-hand) game
+      (with-slots (hide-down-card cards) dealer-hand
+        (seq-map-indexed
+         (lambda (card index)
+           (setq str (concat str
+                             (apply #'blackjack--card-face game
+                                    (if (and (= index 0) hide-down-card)
+                                        blackjack--down-card
+                                      (with-slots (value suit) card
+                                        `(,value ,suit))))))
+           (setq str (concat str " ")))
+         cards))
+      (setq str (concat str " ⇒  "))
+      (setq str (concat str (number-to-string (blackjack--dealer-hand-value dealer-hand 'soft)))))
+    str))
+
 (defun blackjack--draw-dealer-hand (game)
   "Draw the GAME dealer-hand."
-  (with-slots (dealer-hand) game
-    (insert "  ")
-    (with-slots (hide-down-card cards) dealer-hand
-      (seq-map-indexed
-       (lambda (card index)
-         "Display one of the cards in the dealer's hand."
-         (insert
-          (apply #'blackjack--card-face game
-                 (if (and (= index 0) hide-down-card)
-                     blackjack--down-card
-                   (with-slots (value suit) card
-                     `(,value ,suit)))))
-         (insert " "))
-       cards))
-    (insert " ⇒  ")
-    (insert (number-to-string (blackjack--dealer-hand-value dealer-hand 'soft)))))
+  (insert (blackjack--dealer-hand-to-str game)))
 
 (defun blackjack--dealer-hand-value (dealer-hand count-method)
   "Calculates DEALER-HAND cards total value based on COUNT-METHOD."
@@ -704,14 +708,18 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
     total))
 
 (defun blackjack--draw-player-hands (game)
-  "Draw GAME players hands."
+  "Draws GAME player hands."
   (seq-map-indexed
    (apply-partially #'blackjack--draw-player-hand game)
    (slot-value game 'player-hands)))
 
 (defun blackjack--draw-player-hand (game player-hand index)
+  "Draws a single GAME PLAYER-HAND using an INDEX."
+  (insert (blackjack--player-hand-to-str game player-hand index)))
+
+(defun blackjack--player-hand-to-str (game player-hand index)
   "Draw the GAME PLAYER-HAND using an INDEX."
-  (insert (blackjack--player-hand-cards game player-hand)
+  (concat (blackjack--player-hand-cards game player-hand)
           (blackjack--player-hand-money game player-hand index)
           (blackjack--player-hand-status player-hand)
           "\n\n"))
@@ -719,7 +727,7 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 (defun blackjack--player-hand-cards (game player-hand)
   "Draw GAME PLAYER-HAND cards."
   (with-slots (cards) player-hand
-    (format "%s  ⇒  %s  "
+    (format "  %s  ⇒  %s  "
             (mapconcat
              (lambda (card)
                "Present how CARD is to be drawn."
@@ -751,8 +759,8 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
        (when (eq status 'won) "+")
        blackjack-currency
        (blackjack--format-money bet)
-    (when (and
-           (not played)
+       (when (and
+              (not played)
               (= index current-player-hand))
          " ⇐")
        "  "))))
@@ -1079,7 +1087,7 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
   "Get new number of GAME decks."
   (with-slots (current-menu num-decks) game
     (setf current-menu 'num-decks)
-  (blackjack--update-header game)
+    (blackjack--update-header game)
     (setf num-decks (string-to-number (blackjack--new-number-decks-prompt)))
     (blackjack--normalize-num-decks game)
     (blackjack--save game)
