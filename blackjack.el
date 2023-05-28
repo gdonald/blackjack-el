@@ -311,7 +311,7 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
   (when (blackjack--no-more-actions-p player-hand)
     (with-slots (played payed cards) player-hand
       (setf played t)
-      (when (and (not payed) 
+      (when (and (not payed)
                  (blackjack--player-hand-is-busted-p cards))
         (blackjack--collect-busted-hand game player-hand)))
     t))
@@ -377,7 +377,7 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
         (dolist (value (reverse values))
           (when (< (length shoe) total-cards)
             (push
-             (blackjack-card :id (blackjack--next-id game) :value value :suit suit) 
+             (blackjack-card :id (blackjack--next-id game) :value value :suit suit)
              shoe)))))
     (setf (slot-value game 'shoe) (blackjack--shuffle-loop shoe))
     shoe))
@@ -455,9 +455,9 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 (defun blackjack--play-dealer-hand (game)
   "Player GAME dealer hand."
   (let ((playing (blackjack--need-to-play-dealer-hand-p game)))
-    (with-slots (dealer-hand current-menu) game  
+    (with-slots (dealer-hand current-menu) game
       (with-slots (cards hide-down-card played) dealer-hand
-        (when (or playing 
+        (when (or playing
                   (blackjack--hand-is-blackjack-p cards))
           (setf hide-down-card nil))
         (when playing
@@ -604,7 +604,7 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
     (with-slots (money current-menu) game
       (with-slots (bet played payed status) (blackjack--current-player-hand game)
         (cl-callf / bet 2)
-        (setf played t 
+        (setf played t
               payed t
               status 'lost)
         (cl-decf money bet))
@@ -818,21 +818,37 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
   "Resolve the persist file including all abbreviations and symlinks."
   (file-truename (expand-file-name blackjack-persist-file)))
 
+;; (defun blackjack--load-saved-game (game)
+;;   "Load persisted GAME state."
+;;   (when-let ((content
+;;               (ignore-errors
+;;                 (with-temp-buffer
+;;                   (insert-file-contents-literally (blackjack--persist-file-name))
+;;                   (buffer-string))))
+;;              (parts (split-string content "|"))
+;;              ((= (length parts) 5)))
+;;     (with-slots (num-decks deck-type face-type money current-bet) game
+;;       (setf num-decks (string-to-number (nth 0 parts))
+;;             deck-type (intern (nth 1 parts))
+;;             face-type (intern (nth 2 parts))
+;;             money (string-to-number (nth 3 parts))
+;;             current-bet (string-to-number (nth 4 parts))))))
+
 (defun blackjack--load-saved-game (game)
   "Load persisted GAME state."
-  (when-let ((content
-              (ignore-errors
-                (with-temp-buffer
-                  (insert-file-contents-literally (blackjack--persist-file-name))
-                  (buffer-string))))
-             (parts (split-string content "|"))
-             ((= (length parts) 5)))
-    (with-slots (num-decks deck-type face-type money current-bet) game
-      (setf num-decks (string-to-number (nth 0 parts))
-            deck-type (intern (nth 1 parts))
-            face-type (intern (nth 2 parts))
-            money (string-to-number (nth 3 parts))
-            current-bet (string-to-number (nth 4 parts))))))
+  (let (content parts)
+    (ignore-errors
+      (with-temp-buffer
+        (insert-file-contents-literally (blackjack--persist-file-name))
+        (setq content (buffer-string))))
+    (when content
+      (setq parts (split-string content "|")))
+    (when (= (length parts) 5)
+      (setf (slot-value game 'num-decks) (string-to-number (nth 0 parts))
+            (slot-value game 'deck-type) (intern (nth 1 parts))
+            (slot-value game 'face-type) (intern (nth 2 parts))
+            (slot-value game 'money) (string-to-number (nth 3 parts))
+            (slot-value game 'current-bet) (string-to-number (nth 4 parts))))))
 
 (defun blackjack--save (game)
   "Persist GAME state."
