@@ -818,19 +818,19 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 
 (defun blackjack--load-saved-game (game)
   "Load persisted GAME state."
-  (when-let ((content
-              (ignore-errors
-                (with-temp-buffer
-                  (insert-file-contents-literally (blackjack--persist-file-name))
-                  (buffer-string))))
-             (parts (split-string content "|"))
-             ((= (length parts) 5)))
-    (with-slots (num-decks deck-type face-type money current-bet) game
-      (setf num-decks (string-to-number (nth 0 parts))
-            deck-type (intern (nth 1 parts))
-            face-type (intern (nth 2 parts))
-            money (string-to-number (nth 3 parts))
-            current-bet (string-to-number (nth 4 parts))))))
+  (let (content parts)
+    (ignore-errors
+      (with-temp-buffer
+        (insert-file-contents-literally (blackjack--persist-file-name))
+        (setq content (buffer-string))))
+    (when content
+      (setq parts (split-string content "|")))
+    (when (= (length parts) 5)
+      (setf (slot-value game 'num-decks) (string-to-number (nth 0 parts))
+            (slot-value game 'deck-type) (intern (nth 1 parts))
+            (slot-value game 'face-type) (intern (nth 2 parts))
+            (slot-value game 'money) (string-to-number (nth 3 parts))
+            (slot-value game 'current-bet) (string-to-number (nth 4 parts))))))
 
 (defun blackjack--save (game)
   "Persist GAME state."
@@ -1024,16 +1024,16 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 
 (defun blackjack--hand-menu (game)
   "Return GAME hand menu string."
-  (let ((options '()))
-    (when (blackjack--hand-can-double-p game)
-      (push (format "(%s) double" blackjack-deal-double-key) options))
-    (when (blackjack--hand-can-split-p game)
-      (push (format "(%s) split" blackjack-split-key) options))
-    (when (blackjack--hand-can-stand-p game)
-      (push (format "(%s) stand" blackjack-stand-key) options))
-    (when (blackjack--hand-can-hit-p game)
-      (push (format "(%s) hit" blackjack-hit-key) options))
-    (mapconcat #'identity options "  ")))
+  (string-trim-right
+   (cl-labels ((blackjack--menu-item-maybe ((pred key label))
+                (if (funcall pred game) (format "(%s) %s  " key label) "")))
+     (mapconcat
+      #'blackjack--menu-item-maybe
+      `((blackjack--hand-can-hit-p    ,blackjack-hit-key         "hit") 
+        (blackjack--hand-can-stand-p  ,blackjack-stand-key       "stand")
+        (blackjack--hand-can-split-p  ,blackjack-split-key       "split")
+        (blackjack--hand-can-double-p ,blackjack-deal-double-key "double"))
+      ""))))
 
 (defun blackjack--ask-hand-action (game)
   "Ask hand action for GAME."
@@ -1053,17 +1053,17 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 
 (defun blackjack--hand-actions-menu (game)
   "Hand actions menu for GAME."
-  (let ((read-answer-short t)
-	(actions '(("help" ?? "show help"))))
-    (when (blackjack--hand-can-double-p game)
-      (push `("double" ,blackjack-deal-double-key "double bet, deal a new card, and end hand") actions))
-    (when (blackjack--hand-can-split-p game)
-      (push `("split" ,blackjack-split-key "split hand into two hands") actions))
-    (when (blackjack--hand-can-stand-p game)
-      (push `("stand" ,blackjack-stand-key "end current hand with no further actions") actions))
-    (when (blackjack--hand-can-hit-p game)
-      (push `("hit" ,blackjack-hit-key "deal a new card") actions))
-    (read-answer "Hand Action " actions)))
+  (blackjack--read-short-answer "Hand Action "
+   (remq nil 
+    (cl-labels ((blackjack--action-maybe ((pred &rest action)) 
+                 (when (funcall pred game) action)))
+      (mapcar
+       #'blackjack--action-maybe
+       `((blackjack--hand-can-hit-p "hit" ,blackjack-hit-key "deal a new card") 
+         (blackjack--hand-can-stand-p "stand" ,blackjack-stand-key "end current hand with no further actions")
+         (blackjack--hand-can-split-p "split" ,blackjack-split-key "split hand into two hands")
+         (blackjack--hand-can-double-p "double" ,blackjack-deal-double-key "double bet, deal a new card, and end hand")
+         (always "help" ?? "show help")))))))
 
 (defun blackjack--show-options-menu (game)
   "Switch to GAME options menu."
