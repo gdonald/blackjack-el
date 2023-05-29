@@ -903,12 +903,11 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
   "Ask about which GAME option to update."
   (setf (slot-value game 'current-menu) 'options)
   (blackjack--update-header game)
-  (let ((answer (blackjack--game-options-menu)))
-    (pcase answer
-      ("number-decks" (blackjack--ask-new-number-decks game))
-      ("deck-type" (blackjack--ask-new-deck-type game))
-      ("face-type" (blackjack--ask-new-face-type game))
-      ("back" (blackjack--ask-game-action game)))))
+  (pcase (blackjack--game-options-menu)
+    ("number-decks" (blackjack--ask-new-number-decks game))
+    ("deck-type" (blackjack--ask-new-deck-type game))
+    ("face-type" (blackjack--ask-new-face-type game))
+    ("back" (blackjack--ask-game-action game))))
 
 (defun blackjack--game-options-menu ()
   "GAME options menu."
@@ -979,7 +978,7 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 
 (defun blackjack--face-type-menu ()
   "New GAME face type menu."
-  (let* ((read-answer-short t))
+  (let ((read-answer-short t))
     (read-answer "Card Face Type: "
                  `(("regular" ,blackjack-face-type-regular-key "use regular face type")
 		   ("alternate" ,blackjack-face-type-alternate-key "use alternate face type")
@@ -1034,20 +1033,19 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 
 (defun blackjack--ask-hand-action (game)
   "Ask hand action for GAME."
-  (let ((answer (blackjack--hand-actions-menu game)))
-    (pcase answer
-      ("stand" (if (blackjack--hand-can-stand-p game)
-		   (blackjack--stand game)
-		 (blackjack--ask-hand-action game)))
-      ("hit" (if (blackjack--hand-can-hit-p game)
-		 (blackjack--hit game)
+  (pcase (blackjack--hand-actions-menu game)
+    ("stand" (if (blackjack--hand-can-stand-p game)
+		 (blackjack--stand game)
 	       (blackjack--ask-hand-action game)))
-      ("split" (if (blackjack--hand-can-split-p game)
-		   (blackjack--split game)
-		 (blackjack--ask-hand-action game)))
-      ("double" (if (blackjack--hand-can-double-p game)
-		    (blackjack--double game)
-		  (blackjack--ask-hand-action game))))))
+    ("hit" (if (blackjack--hand-can-hit-p game)
+	       (blackjack--hit game)
+	     (blackjack--ask-hand-action game)))
+    ("split" (if (blackjack--hand-can-split-p game)
+		 (blackjack--split game)
+	       (blackjack--ask-hand-action game)))
+    ("double" (if (blackjack--hand-can-double-p game)
+		  (blackjack--double game)
+		(blackjack--ask-hand-action game)))))
 
 (defun blackjack--hand-actions-menu (game)
   "Hand actions menu for GAME."
@@ -1117,8 +1115,7 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
   (blackjack--save-deal-new-hand game))
 
 (defvar blackjack-minor-mode-map
-  (let ((map (make-sparse-keymap)))
-    map)
+  (make-sparse-keymap)
   "Blackjack minor mode keymap.")
 
 (define-minor-mode blackjack-minor-mode
