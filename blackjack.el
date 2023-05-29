@@ -127,7 +127,7 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
    (status :initarg :status :initform 'unknown :type symbol)
    (payed :initarg :payed :initform nil :type boolean)
    (stood :intiarg :stood :initform nil :type boolean)))
-
+ 
 (defclass blackjack-dealer-hand (blackjack-hand)
   ((hide-down-card :initarg :hide-down-card :initform t :type boolean)))
 
@@ -803,17 +803,10 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 
 (defun blackjack--normalize-current-bet (game)
   "Normalize current GAME player bet."
-  (let ((min-bet (slot-value game 'min-bet))
-        (max-bet (slot-value game 'max-bet))
-        (current-bet (slot-value game 'current-bet))
-        (money (slot-value game 'money)))
-    (when (< current-bet min-bet)
-      (setq current-bet min-bet))
-    (when (> current-bet max-bet)
-      (setq current-bet max-bet))
-    (when (> current-bet money)
-      (setq current-bet money))
-    (setf (slot-value game 'current-bet) current-bet)))
+  (with-slots (min-bet max-bet current-bet money) game
+    (cl-callf max current-bet min-bet)
+    (cl-callf min current-bet max-bet)
+    (cl-callf min current-bet money)))
 
 (defun blackjack--persist-file-name ()
   "Resolve the persist file including all abbreviations and symlinks."
