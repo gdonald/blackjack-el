@@ -801,11 +801,15 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
   "Return non-nil if CARD has a value of 10."
   (> (slot-value card 'value) 8))
 
+(defmacro blackjack--limit-to-range (lo proposed hi)
+  `(progn
+     (cl-callf max ,proposed ,lo)
+     (cl-callf min ,proposed ,hi)))
+
 (defun blackjack--normalize-current-bet (game)
   "Normalize current GAME player bet."
   (with-slots (min-bet max-bet current-bet money) game
-    (cl-callf max current-bet min-bet)
-    (cl-callf min current-bet max-bet)
+    (blackjack--limit-to-range min-bet current-bet max-bet)
     (cl-callf min current-bet money)))
 
 (defun blackjack--persist-file-name ()
@@ -881,15 +885,20 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
     ("options" (blackjack--ask-game-options game))
     ("quit" (blackjack--quit game))))
 
+(defun blackjack--read-short-answer (prompt answer-list)
+  "PROMPT for one of ANSWER-LIST accepting single-character answers."
+  (let ((read-answer-short t))
+    (read-answer prompt answer-list)))
+
 (defun blackjack-game-actions-menu ()
   "Bet actions menu for GAME."
-  (let ((read-answer-short t))
-    (read-answer "Game Actions: "
-                 `(("deal" ,blackjack-deal-double-key "deal new hand")
-                   ("bet" ,blackjack-bet-back-key "change current bet")
-                   ("options" ,blackjack-options-key "change game options")
-                   ("quit" ,blackjack-quit-key "quit blackjack")
-                   ("help" ?? "show help")))))
+  (blackjack--read-short-answer
+   "Game Actions: "
+   `(("deal" ,blackjack-deal-double-key "deal new hand")
+     ("bet" ,blackjack-bet-back-key "change current bet")
+     ("options" ,blackjack-options-key "change game options")
+     ("quit" ,blackjack-quit-key "quit blackjack")
+     ("help" ?? "show help"))))
 
 (defun blackjack--options-header-menu ()
   "Return option menu string."
@@ -911,14 +920,13 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 
 (defun blackjack--game-options-menu ()
   "GAME options menu."
-  (let ((read-answer-short t))
-    (read-answer
-     "Options: "
-     `(("number-decks" ,blackjack-num-decks-no-insurance-key "change number of decks")
-       ("deck-type" ,blackjack-deck-type-key "change the deck type")
-       ("face-type" ,blackjack-face-type-key "change the card face type")
-       ("back" ,blackjack-bet-back-key "go back to previous menu")
-       ("help" ?? "show help")))))
+  (blackjack--read-short-answer
+   "Options: "
+   `(("number-decks" ,blackjack-num-decks-no-insurance-key "change number of decks")
+     ("deck-type" ,blackjack-deck-type-key "change the deck type")
+     ("face-type" ,blackjack-face-type-key "change the card face type")
+     ("back" ,blackjack-bet-back-key "go back to previous menu")
+     ("help" ?? "show help"))))
 
 (defun blackjack--deck-type-header-menu ()
   "Return deck type menu string."
@@ -943,24 +951,21 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 (defun blackjack--normalize-num-decks (game)
   "Normalize GAME num-decks."
   (with-slots (num-decks deck-type) game
-    (when (and (< num-decks 2)
-               (eq deck-type 'aces))
-      (setf num-decks 2))
-    (cl-callf max num-decks 1)
-    (cl-callf min num-decks 8)))
+    (when (eq deck-type 'aces)
+      (cl-callf min num-decks 2))
+    (blackjack--limit-to-range 1 num-decks 8)))
 
 (defun blackjack-deck-type-menu ()
   "New GAME deck type menu."
-  (let ((read-answer-short t))
-    (read-answer
-     "Deck Type: "
-     `(("regular" ,blackjack-deck-regular-key "regular deck")
-       ("aces" ,blackjack-deck-aces-key "deck of aces")
-       ("jacks" ,blackjack-deck-jacks-key "deck of jacks")
-       ("aces-jacks" ,blackjack-deck-aces-jacks-key "deck of aces and jacks")
-       ("sevens" ,blackjack-deck-sevens-key "deck of sevens")
-       ("eights" ,blackjack-deck-eights-key "deck of eights")
-       ("help" ?? "show help")))))
+  (blackjack--read-short-answer
+   "Deck Type: "
+   `(("regular" ,blackjack-deck-regular-key "regular deck")
+     ("aces" ,blackjack-deck-aces-key "deck of aces")
+     ("jacks" ,blackjack-deck-jacks-key "deck of jacks")
+     ("aces-jacks" ,blackjack-deck-aces-jacks-key "deck of aces and jacks")
+     ("sevens" ,blackjack-deck-sevens-key "deck of sevens")
+     ("eights" ,blackjack-deck-eights-key "deck of eights")
+     ("help" ?? "show help"))))
 
 (defun blackjack--face-type-header-menu ()
   "Return face type menu string."
@@ -978,11 +983,11 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 
 (defun blackjack--face-type-menu ()
   "New GAME face type menu."
-  (let ((read-answer-short t))
-    (read-answer "Card Face Type: "
-                 `(("regular" ,blackjack-face-type-regular-key "use regular face type")
-		   ("alternate" ,blackjack-face-type-alternate-key "use alternate face type")
-                   ("help" ?? "show help")))))
+  (blackjack--read-short-answer
+   "Card Face Type: "
+   `(("regular" ,blackjack-face-type-regular-key "use regular face type")
+     ("alternate" ,blackjack-face-type-alternate-key "use alternate face type")
+     ("help" ?? "show help"))))
 
 (defun blackjack--insurance-header-menu ()
   "Return insurance menu string."
@@ -999,12 +1004,11 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 
 (defun blackjack--ask-insurance-menu ()
   "Ask about insuring GAME hand."
-  (let ((read-answer-short t))
-    (read-answer
-     "Hand Insurance: "
-     `(("yes" ,blackjack-insurance-key "insure hand")
-       ("no" ,blackjack-num-decks-no-insurance-key "refuse insurance")
-       ("help" ?? "show help")))))
+  (blackjack--read-short-answer
+   "Hand Insurance: "
+   `(("yes" ,blackjack-insurance-key "insure hand")
+     ("no" ,blackjack-num-decks-no-insurance-key "refuse insurance")
+     ("help" ?? "show help"))))
 
 (defun blackjack--num-decks-header-menu ()
   "Return number of decks menu string."
