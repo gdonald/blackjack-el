@@ -677,17 +677,18 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
       (with-slots (hide-down-card cards) dealer-hand
         (seq-map-indexed
          (lambda (card index)
-           (setq str (concat str
-                             (apply #'blackjack--card-face game
-                                    (if (and (= index 0) hide-down-card)
-                                        blackjack--down-card
-                                      (with-slots (value suit) card
-                                        `(,value ,suit))))))
-           (setq str (concat str " ")))
+           (cl-callf concat str
+             (apply #'blackjack--card-face game
+                    (if (and (= index 0) hide-down-card)
+                        blackjack--down-card
+                      (with-slots (value suit) card
+                        `(,value ,suit))))
+             " "))
          cards))
-      (setq str (concat str " ⇒  "))
-      (setq str (concat str (number-to-string (blackjack--dealer-hand-value dealer-hand 'soft)))))
-    str))
+      (concat
+       str
+       " ⇒  "
+       (number-to-string (blackjack--dealer-hand-value dealer-hand 'soft))))))
 
 (defun blackjack--draw-dealer-hand (game)
   "Draw the GAME dealer-hand."
@@ -818,37 +819,21 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
   "Resolve the persist file including all abbreviations and symlinks."
   (file-truename (expand-file-name blackjack-persist-file)))
 
-;; (defun blackjack--load-saved-game (game)
-;;   "Load persisted GAME state."
-;;   (when-let ((content
-;;               (ignore-errors
-;;                 (with-temp-buffer
-;;                   (insert-file-contents-literally (blackjack--persist-file-name))
-;;                   (buffer-string))))
-;;              (parts (split-string content "|"))
-;;              ((= (length parts) 5)))
-;;     (with-slots (num-decks deck-type face-type money current-bet) game
-;;       (setf num-decks (string-to-number (nth 0 parts))
-;;             deck-type (intern (nth 1 parts))
-;;             face-type (intern (nth 2 parts))
-;;             money (string-to-number (nth 3 parts))
-;;             current-bet (string-to-number (nth 4 parts))))))
-
 (defun blackjack--load-saved-game (game)
   "Load persisted GAME state."
-  (let (content parts)
-    (ignore-errors
-      (with-temp-buffer
-        (insert-file-contents-literally (blackjack--persist-file-name))
-        (setq content (buffer-string))))
-    (when content
-      (setq parts (split-string content "|")))
-    (when (= (length parts) 5)
-      (setf (slot-value game 'num-decks) (string-to-number (nth 0 parts))
-            (slot-value game 'deck-type) (intern (nth 1 parts))
-            (slot-value game 'face-type) (intern (nth 2 parts))
-            (slot-value game 'money) (string-to-number (nth 3 parts))
-            (slot-value game 'current-bet) (string-to-number (nth 4 parts))))))
+  (when-let ((content
+              (ignore-errors
+                (with-temp-buffer
+                  (insert-file-contents-literally (blackjack--persist-file-name))
+                  (buffer-string))))
+             (parts (split-string content "|"))
+             ((= (length parts) 5)))
+    (with-slots (num-decks deck-type face-type money current-bet) game
+      (setf num-decks (string-to-number (nth 0 parts))
+            deck-type (intern (nth 1 parts))
+            face-type (intern (nth 2 parts))
+            money (string-to-number (nth 3 parts))
+            current-bet (string-to-number (nth 4 parts))))))
 
 (defun blackjack--save (game)
   "Persist GAME state."
