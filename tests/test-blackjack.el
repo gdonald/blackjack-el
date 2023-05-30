@@ -970,11 +970,62 @@
           :var ((game (blackjack-game))
                 (player-hand (blackjack-player-hand)))
 
-          (it "inserts player hand"
+          (it "inserts player hand string"
               (spy-on 'insert)
               (spy-on 'blackjack--player-hand-to-str :and-return-value "  A♠ T♠  ⇒  21  $5.00 ⇐  \n\n")
               (blackjack--draw-player-hand game player-hand 0)
               (expect 'insert :to-have-been-called-with "  A♠ T♠  ⇒  21  $5.00 ⇐  \n\n")))
+
+(describe "blackjack--player-hand-to-str"
+          :var ((game (blackjack-game))
+                (player-hand (blackjack-player-hand :cards (list card-A card-T) :bet 500)))
+
+          (it "returns the player hand as a string"
+              (expect (blackjack--player-hand-to-str game player-hand 0) :to-equal "  A♠ T♠  ⇒  21  $5.00 ⇐  \n\n")))
+
+(describe "blackjack--player-hand-cards"
+          :var ((game (blackjack-game))
+                (player-hand (blackjack-player-hand :cards (list card-A card-T))))
+
+          (it "returns the player hand cards as a string"
+              (expect (blackjack--player-hand-cards game player-hand) :to-equal "  A♠ T♠  ⇒  21  ")))
+
+(describe "blackjack--player-hand-status"
+          :var ((player-hand (blackjack-player-hand)))
+
+          (describe "unknown"
+                    (it "returns the player hand status"
+                        (expect (blackjack--player-hand-status player-hand) :to-equal "")))
+
+          (describe "push"
+                    (it "returns the player hand status"
+                        (setf (slot-value player-hand 'status) 'push)
+                        (expect (blackjack--player-hand-status player-hand) :to-equal "Push")))
+
+          (describe "blackjack"
+                    (it "returns the player hand status"
+                        (setf (slot-value player-hand 'status) 'won)
+                        (spy-on 'blackjack--hand-is-blackjack-p :and-return-value t)
+                        (expect (blackjack--player-hand-status player-hand) :to-equal "Blackjack!")))
+
+          (describe "won"
+                    (it "returns the player hand status"
+                        (setf (slot-value player-hand 'status) 'won)
+                        (spy-on 'blackjack--hand-is-blackjack-p :and-return-value nil)
+                        (expect (blackjack--player-hand-status player-hand) :to-equal "Won!")))
+
+          (describe "lost"
+                    (it "returns the player hand status"
+                        (setf (slot-value player-hand 'status) 'lost)
+                        (spy-on 'blackjack--player-hand-is-busted-p :and-return-value nil)
+                        (expect (blackjack--player-hand-status player-hand) :to-equal "Lost!")))
+
+          (describe "busted"
+                    (it "returns the player hand status"
+                        (setf (slot-value player-hand 'status) 'lost)
+                        (spy-on 'blackjack--player-hand-is-busted-p :and-return-value t)
+                        (expect (blackjack--player-hand-status player-hand) :to-equal "Busted!"))))
+
 
 ;; (describe "blackjack--new-bet-menu"
 ;;           (before-all
