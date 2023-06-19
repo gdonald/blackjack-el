@@ -44,8 +44,8 @@
           (it "is initially not played"
               (expect (slot-value player-hand 'played) :to-be nil))
 
-          (it "is initially not payed"
-              (expect (slot-value player-hand 'payed) :to-be nil))
+          (it "is initially not paid"
+              (expect (slot-value player-hand 'paid) :to-be nil))
 
           (it "is initially not stood"
               (expect (slot-value player-hand 'stood) :to-be nil)))
@@ -222,15 +222,15 @@
           (before-each
            (setf player-hand (blackjack-player-hand)))
 
-          (it "ignores payed player hands"
+          (it "ignores paid player hands"
               (spy-on 'blackjack--player-hand-value)
-              (setf (slot-value player-hand 'payed) t)
+              (setf (slot-value player-hand 'paid) t)
               (blackjack--pay-player-hand game player-hand 0 nil)
               (expect 'blackjack--player-hand-value :not :to-have-been-called))
 
-          (it "pays unpayed player hands"
+          (it "pays unpaid player hands"
               (blackjack--pay-player-hand game player-hand 0 nil)
-              (expect (slot-value player-hand 'payed) :to-be t))
+              (expect (slot-value player-hand 'paid) :to-be t))
 
           (describe "with a player hand value of 18"
 
@@ -286,7 +286,7 @@
 
           (it "collects a busted player hand"
               (blackjack--collect-busted-hand game player-hand)
-              (expect (slot-value player-hand 'payed) :to-be t)
+              (expect (slot-value player-hand 'paid) :to-be t)
               (expect (slot-value player-hand 'status) :to-be 'lost)
               (expect (slot-value game 'money) :to-be 9500)))
 
@@ -398,7 +398,7 @@
            (setf (slot-value game 'dealer-hand) dealer-hand)
            (spy-on 'blackjack--ask-game-action))
 
-          (it "is always set to played and player hands payed"
+          (it "is always set to played and player hands paid"
               (spy-on 'blackjack--pay-hands)
               (blackjack--play-dealer-hand game)
               (expect (slot-value dealer-hand 'hide-down-card) :to-be t)
@@ -715,7 +715,7 @@
                     (it "surrender half of hand bet"
                         (blackjack--insure-hand game)
                         (expect (slot-value player-hand 'bet) :to-be 250)
-                        (expect (slot-value player-hand 'payed) :to-be t)
+                        (expect (slot-value player-hand 'paid) :to-be t)
                         (expect (slot-value player-hand 'played) :to-be t)
                         (expect (slot-value player-hand 'status) :to-be 'lost)
                         (expect (slot-value game 'money) :to-be 9750)

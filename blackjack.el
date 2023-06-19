@@ -125,7 +125,7 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
   ((id :initarg :id :initform 0 :type integer)
    (bet :initarg :bet :initform 0 :type integer)
    (status :initarg :status :initform 'unknown :type symbol)
-   (payed :initarg :payed :initform nil :type boolean)
+   (paid :initarg :paid :initform nil :type boolean)
    (stood :intiarg :stood :initform nil :type boolean)))
 
 (defclass blackjack-dealer-hand (blackjack-hand)
@@ -191,13 +191,13 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 ;; (cl-defmethod cl-print-object ((obj blackjack-player-hand) stream)
 ;;   "Print OBJ to STREAM."
 ;;   (princ
-;;    (format "#<%s id: %d cards: %s played: %s status: %s payed: %s stood: %s bet: %s>"
+;;    (format "#<%s id: %d cards: %s played: %s status: %s paid: %s stood: %s bet: %s>"
 ;;            (eieio-class-name (eieio-object-class obj))
 ;;            (slot-value obj 'id)
 ;;            (slot-value obj 'cards)
 ;;            (slot-value obj 'played)
 ;;            (slot-value obj 'status)
-;;            (slot-value obj 'payed)
+;;            (slot-value obj 'paid)
 ;;            (slot-value obj 'stood)
 ;;            (slot-value obj 'bet))
 ;;    stream))
@@ -271,9 +271,9 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 
 (defun blackjack--pay-player-hand (game player-hand dealer-hand-value dealer-hand-busted)
   "Pay GAME PLAYER-HAND based on DEALER-HAND-VALUE and DEALER-HAND-BUSTED."
-  (with-slots (payed cards status) player-hand
-    (unless payed
-      (setf payed t)
+  (with-slots (paid cards status) player-hand
+    (unless paid
+      (setf paid t)
       (let ((player-hand-value (blackjack--player-hand-value cards 'soft)))
         (if (blackjack--player-hand-won player-hand-value dealer-hand-value dealer-hand-busted)
             (blackjack--pay-won-hand game player-hand)
@@ -309,9 +309,9 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 (defun blackjack--player-hand-done-p (game player-hand)
   "Return non-nil when GAME PLAYER-HAND is done."
   (when (blackjack--no-more-actions-p player-hand)
-    (with-slots (played payed cards) player-hand
+    (with-slots (played paid cards) player-hand
       (setf played t)
-      (when (and (not payed)
+      (when (and (not paid)
                  (blackjack--player-hand-is-busted-p cards))
         (blackjack--collect-busted-hand game player-hand)))
     t))
@@ -319,8 +319,8 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 (defun blackjack--collect-busted-hand (game player-hand)
   "Collect bet from GAME PLAYER-HAND."
   (with-slots (money) game
-    (with-slots (payed status bet) player-hand
-      (setf payed t
+    (with-slots (paid status bet) player-hand
+      (setf paid t
             status 'lost)
       (cl-decf money bet))))
 
@@ -602,10 +602,10 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
   (interactive)
   (when (blackjack--valid-menu-action-p game 'insurance)
     (with-slots (money current-menu) game
-      (with-slots (bet played payed status) (blackjack--current-player-hand game)
+      (with-slots (bet played paid status) (blackjack--current-player-hand game)
         (cl-callf / bet 2)
         (setf played t
-              payed t
+              paid t
               status 'lost)
         (cl-decf money bet))
       (setf current-menu 'game)
