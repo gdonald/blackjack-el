@@ -27,9 +27,9 @@ You can run it like this:
 
 #### Running tests:
 
-`make test` and `make test-coverage` are available.  Tests are written using "buttercup".  Test coverage is generated using "undercover".  Both packages are available from MELPA.
+`make test` and `make test-coverage` are available.  Tests are written using [Buttercup](https://github.com/jorgenschaefer/emacs-buttercup).  Test coverage is generated using [undercover](https://github.com/undercover-el/undercover.el).  Both packages are available from MELPA.
 
-You will need to install the Ruby programming language and the "simplecov" gem for test coverage to build.
+You will need to install [Ruby](https://www.ruby-lang.org/) and [Simplecov](https://github.com/simplecov-ruby/simplecov) for test coverage to build.
 
 #### Going broke:
 
