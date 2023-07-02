@@ -13,7 +13,9 @@
       card-4 (blackjack-card :value 3)
       card-6 (blackjack-card :value 5)
       card-7 (blackjack-card :value 6)
-      card-T (blackjack-card :value 9))
+      card-9 (blackjack-card :value 8)
+      card-T (blackjack-card :value 9)
+      card-J (blackjack-card :value 10))
 
 (describe "blackjack-card"
           :var ((card (blackjack-card)))
@@ -1104,6 +1106,55 @@
           (it "returns 🂠"
               (setf (slot-value game 'face-type) 'alternate)
               (expect (blackjack--card-face game 13 0) :to-equal "🂠")))
+
+(describe "blackjack--is-ace-p"
+          (it "returns true"
+              (expect (blackjack--is-ace-p card-A) :to-be t))
+
+          (it "returns false"
+              (expect (blackjack--is-ace-p card-T) :to-be nil)))
+
+(describe "blackjack--is-ten-p"
+          (it "10 returns true"
+              (expect (blackjack--is-ten-p card-T) :to-be t))
+
+          (it "Jack returns true"
+              (expect (blackjack--is-ten-p card-J) :to-be t))
+
+          (it "9 returns false"
+              (expect (blackjack--is-ten-p card-9) :to-be nil)))
+
+(describe "blackjack--normalize-current-bet"
+          :var ((game (blackjack-game)))
+
+          (it "does not change current bet"
+              (blackjack--normalize-current-bet game)
+              (expect (slot-value game 'current-bet) :to-equal 500))
+
+          (it "change current bet to minimum"
+              (setf (slot-value game 'min-bet) 1000)
+              (blackjack--normalize-current-bet game)
+              (expect (slot-value game 'current-bet) :to-equal 1000))
+
+          (it "change current bet to maximum"
+              (setf (slot-value game 'max-bet) 1000)
+              (setf (slot-value game 'current-bet) 10000)
+              (blackjack--normalize-current-bet game)
+              (expect (slot-value game 'current-bet) :to-equal 1000))
+
+          (it "change current bet to money"
+              (setf (slot-value game 'max-bet) 100000000)
+              (setf (slot-value game 'money) 1000)
+              (setf (slot-value game 'current-bet) 2000)
+              (blackjack--normalize-current-bet game)
+              (expect (slot-value game 'current-bet) :to-equal 1000)))
+
+(describe "blackjack--persist-file-name"
+          (it "returns a file name"
+              (setf result (string-match-p
+                            "/.emacs.d/blackjack.txt\\'"
+                            (blackjack--persist-file-name)))
+              (expect result :not :to-be nil)))
 
 ;; TODO: can't seem to mock read-string
 ;; (describe "blackjack--new-bet-menu"
