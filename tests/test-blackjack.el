@@ -9,6 +9,7 @@
 (require 'blackjack)
 
 (setf card-A (blackjack-card :value 0)
+      card-2 (blackjack-card :value 1)
       card-4 (blackjack-card :value 3)
       card-6 (blackjack-card :value 5)
       card-7 (blackjack-card :value 6)
@@ -1026,7 +1027,85 @@
                         (spy-on 'blackjack--player-hand-is-busted-p :and-return-value t)
                         (expect (blackjack--player-hand-status player-hand) :to-equal "Busted!"))))
 
+(describe "blackjack--player-hand-money"
+          :var ((game (blackjack-game))
+                (player-hand (blackjack-player-hand :bet 500)))
 
+          (it "returns current player hand money as a string"
+              (expect (blackjack--player-hand-money game player-hand 0) :to-equal "$5.00 ⇐  "))
+
+          (it "returns non-current player hand money as a string"
+              (expect (blackjack--player-hand-money game player-hand 1) :to-equal "$5.00  "))
+
+          (it "returns lost player hand money as a string"
+              (setf (slot-value player-hand 'status) 'lost)
+              (expect (blackjack--player-hand-money game player-hand 0) :to-equal "-$5.00 ⇐  "))
+
+          (it "returns won player hand money as a string"
+              (setf (slot-value player-hand 'status) 'won)
+              (expect (blackjack--player-hand-money game player-hand 0) :to-equal "+$5.00 ⇐  "))
+
+          (it "returns played current player hand money as a string"
+              (setf (slot-value player-hand 'played) t)
+              (setf (slot-value player-hand 'status) 'unknown)
+              (expect (blackjack--player-hand-money game player-hand 0) :to-equal "$5.00  ")))
+
+(describe "blackjack--player-hand-value"
+          :var ((cards))
+
+          (it "returns 13"
+              (setf cards (list card-A card-2))
+              (expect (blackjack--player-hand-value cards 'soft) :to-equal 13))
+
+          (it "returns 3"
+              (setf cards (list card-A card-2))
+              (expect (blackjack--player-hand-value cards 'hard) :to-equal 3))
+
+          (it "returns 21"
+              (setf cards (list card-A card-T))
+              (expect (blackjack--player-hand-value cards 'soft) :to-equal 21))
+
+          (it "returns 11"
+              (setf cards (list card-A card-T))
+              (expect (blackjack--player-hand-value cards 'hard) :to-equal 11))
+
+          (it "returns 12 with forced hard count"
+              (setf cards (list card-A card-A card-T))
+              (expect (blackjack--player-hand-value cards 'soft) :to-equal 12)))
+
+
+(describe "blackjack--card-val"
+          (it "returns 11"
+              (expect (blackjack--card-val card-A 'soft 0) :to-equal 11))
+
+          (it "returns 1"
+              (expect (blackjack--card-val card-A 'hard 0) :to-equal 1))
+
+          (it "returns 1 with forced hard count"
+              (expect (blackjack--card-val card-A 'soft 11) :to-equal 1))
+
+          (it "returns 10"
+              (expect (blackjack--card-val card-T 'soft 0) :to-equal 10)))
+
+(describe "blackjack--card-face"
+          :var ((game (blackjack-game)))
+
+          (it "returns A♠"
+              (expect (blackjack--card-face game 0 0) :to-equal "A♠"))
+
+          (it "returns 🂡"
+              (setf (slot-value game 'face-type) 'alternate)
+              (expect (blackjack--card-face game 0 0) :to-equal "🂡"))
+
+          (it "returns ??"
+              (setf (slot-value game 'face-type) 'regular)
+              (expect (blackjack--card-face game 13 0) :to-equal "??"))
+
+          (it "returns 🂠"
+              (setf (slot-value game 'face-type) 'alternate)
+              (expect (blackjack--card-face game 13 0) :to-equal "🂠")))
+
+;; TODO: can't seem to mock read-string
 ;; (describe "blackjack--new-bet-menu"
 ;;           (before-all
 ;;            (noninteractive t)

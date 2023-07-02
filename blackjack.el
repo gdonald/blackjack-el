@@ -818,22 +818,6 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
   "Resolve the persist file including all abbreviations and symlinks."
   (file-truename (expand-file-name blackjack-persist-file)))
 
-;; (defun blackjack--load-saved-game (game)
-;;   "Load persisted GAME state."
-;;   (when-let ((content
-;;               (ignore-errors
-;;                 (with-temp-buffer
-;;                   (insert-file-contents-literally (blackjack--persist-file-name))
-;;                   (buffer-string))))
-;;              (parts (split-string content "|"))
-;;              ((= (length parts) 5)))
-;;     (with-slots (num-decks deck-type face-type money current-bet) game
-;;       (setf num-decks (string-to-number (nth 0 parts))
-;;             deck-type (intern (nth 1 parts))
-;;             face-type (intern (nth 2 parts))
-;;             money (string-to-number (nth 3 parts))
-;;             current-bet (string-to-number (nth 4 parts))))))
-
 (defun blackjack--load-saved-game (game)
   "Load persisted GAME state."
   (let (content parts)
