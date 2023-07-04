@@ -790,15 +790,21 @@
                      (spy-on 'blackjack--new-bet-menu :and-return-value "5")
                      (spy-on 'blackjack--deal-new-hand)
                      (spy-on 'blackjack--normalize-current-bet)
-                     (spy-on 'blackjack--save))
+                     (spy-on 'blackjack--persist-state))
 
                     (it "asks for and sets new bet value"
                         (blackjack--ask-new-bet game)
                         (expect 'blackjack--deal-new-hand :to-have-been-called)
                         (expect (slot-value game 'current-bet) :to-be 500)
                         (expect 'blackjack--normalize-current-bet :to-have-been-called)
-                        (expect 'blackjack--save :to-have-been-called)
+                        (expect 'blackjack--persist-state :to-have-been-called)
                         (expect (slot-value game 'current-menu) :to-be 'game))))
+
+(describe "blackjack--new-bet-menu"
+          (it "asks for a new bet amount"
+              (spy-on 'read-string)
+              (blackjack--new-bet-menu)
+              (expect 'read-string :to-have-been-called)))
 
 (describe "blackjack--player-hand-is-busted-p"
           (describe "when soft hand count is less than 21"
@@ -1156,15 +1162,23 @@
                             (blackjack--persist-file-name)))
               (expect result :not :to-be nil)))
 
-;; TODO: can't seem to mock read-string
-;; (describe "blackjack--new-bet-menu"
-;;           (before-all
-;;            (noninteractive t)
-;;            (spy-on 'read-string))
+(describe "blackjack--persisted-state"
+          (it "returns persisted state as a string"
+              (spy-on 'buffer-string :and-call-through)
+              (expect (blackjack--persisted-state) :to-equal "1|regular|regular|10000|500")
+              (expect 'buffer-string :to-have-been-called)))
 
-;;           (it "calls read-string"
-;;               (blackjack--new-bet-menu)
-;;               (expect 'read-string :to-have-been-called)))
+(describe "blackjack--load-persisted-state"
+          :var ((game (blackjack-game)))
+
+          (it "loads saved gamed state"
+              (spy-on 'blackjack--persisted-state :and-return-value "8|aces|alternate|20000|1000")
+              (blackjack--load-persisted-state game)
+              (expect (slot-value game 'num-decks) :to-be 8)
+              (expect (slot-value game 'deck-type) :to-be 'aces)
+              (expect (slot-value game 'face-type) :to-be 'alternate)
+              (expect (slot-value game 'money) :to-be 20000)
+              (expect (slot-value game 'current-bet) :to-be 1000)))
 
 (provide 'test-blackjack)
 

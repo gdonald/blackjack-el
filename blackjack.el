@@ -245,7 +245,7 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
                 (blackjack--ask-game-action game))
             (setf current-menu 'hand)
             (blackjack--draw-hands game)
-            (blackjack--save game)
+            (blackjack--persist-state game)
             (blackjack--ask-hand-action game)))))))
 
 (defun blackjack--deal-card (game hand)
@@ -267,7 +267,7 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
       (dolist (player-hand player-hands)
         (blackjack--pay-player-hand game player-hand dealer-hand-value dealer-busted))
       (blackjack--normalize-current-bet game)
-      (blackjack--save game))))
+      (blackjack--persist-state game))))
 
 (defun blackjack--pay-player-hand (game player-hand dealer-hand-value dealer-hand-busted)
   "Pay GAME PLAYER-HAND based on DEALER-HAND-VALUE and DEALER-HAND-BUSTED."
@@ -641,7 +641,7 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
       (with-slots (current-bet current-menu) game
         (setf current-bet bet)
         (blackjack--normalize-current-bet game)
-        (blackjack--save game)
+        (blackjack--persist-state game)
         (setf current-menu 'game)
         (blackjack--deal-new-hand game)))))
 
@@ -818,23 +818,26 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
   "Resolve the persist file including all abbreviations and symlinks."
   (file-truename (expand-file-name blackjack-persist-file)))
 
-(defun blackjack--load-saved-game (game)
-  "Load persisted GAME state."
-  (let (content parts)
-    (ignore-errors
-      (with-temp-buffer
-        (insert-file-contents-literally (blackjack--persist-file-name))
-        (setq content (buffer-string))))
-    (when content
-      (setq parts (split-string content "|")))
-    (when (= (length parts) 5)
-      (setf (slot-value game 'num-decks) (string-to-number (nth 0 parts))
-            (slot-value game 'deck-type) (intern (nth 1 parts))
-            (slot-value game 'face-type) (intern (nth 2 parts))
-            (slot-value game 'money) (string-to-number (nth 3 parts))
-            (slot-value game 'current-bet) (string-to-number (nth 4 parts))))))
+(defun blackjack--persisted-state ()
+  "Return saved game state as a string."
+  (ignore-errors
+    (with-temp-buffer
+      (insert-file-contents-literally (blackjack--persist-file-name))
+      (buffer-string))))
 
-(defun blackjack--save (game)
+(defun blackjack--load-persisted-state (game)
+  "Set GAME state."
+  (let ((state (blackjack--persisted-state)))
+    (when state
+      (let ((parts (split-string state "|")))
+        (when (= (length parts) 5)
+          (setf (slot-value game 'num-decks) (string-to-number (nth 0 parts))
+                (slot-value game 'deck-type) (intern (nth 1 parts))
+                (slot-value game 'face-type) (intern (nth 2 parts))
+                (slot-value game 'money) (string-to-number (nth 3 parts))
+                (slot-value game 'current-bet) (string-to-number (nth 4 parts))))))))
+
+(defun blackjack--persist-state (game)
   "Persist GAME state."
   (ignore-errors
     (with-temp-file (blackjack--persist-file-name)
@@ -981,7 +984,7 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
     (setf current-menu 'face-type)
     (blackjack--update-header game)
     (setf face-type (intern (blackjack--face-type-menu)))
-    (blackjack--save-deal-new-hand game)))
+    (blackjack--persist-state-deal-new-hand game)))
 
 (defun blackjack--face-type-menu ()
   "New GAME face type menu."
@@ -1090,7 +1093,7 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
     (blackjack--update-header game)
     (setf num-decks (string-to-number (blackjack--new-number-decks-prompt)))
     (blackjack--normalize-num-decks game)
-    (blackjack--save game)
+    (blackjack--persist-state game)
     (blackjack--shuffle game)
     (setf current-menu 'game)
     (blackjack--deal-new-hand game)))
@@ -1111,16 +1114,16 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
               (blackjack--update-header game)
               (funcall (intern (format "blackjack--ask-%s-action" menu))))))))
 
-(defun blackjack--save-deal-new-hand (game)
+(defun blackjack--persist-state-deal-new-hand (game)
   "Save GAME and deal new hand."
-  (blackjack--save game)
+  (blackjack--persist-state game)
   (setf (slot-value game 'current-menu) 'game)
   (blackjack--deal-new-hand game))
 
 (defun blackjack--shuffle-save-deal-new-hand (game)
   "Shuffle, save, and deal new GAME hand."
   (blackjack--shuffle game)
-  (blackjack--save-deal-new-hand game))
+  (blackjack--persist-state-deal-new-hand game))
 
 (defvar blackjack-minor-mode-map
   (let ((map (make-sparse-keymap)))
@@ -1141,7 +1144,7 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
 (defun blackjack--init ()
   "Initialize game state."
   (let ((game (blackjack-game)))
-    (blackjack--load-saved-game game)
+    (blackjack--load-persisted-state game)
     (blackjack--normalize-num-decks game)
     (while (not (slot-value game 'quitting))
       (blackjack--deal-new-hand game))))
