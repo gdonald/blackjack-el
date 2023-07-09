@@ -1,19 +1,19 @@
 [![MELPA](https://melpa.org/packages/blackjack-badge.svg)](https://melpa.org/#/blackjack)
 
-## blackjack-el - Blackjack written in Elisp
+## Blackjack for Emacs
 
-This package lets you play Blackjack in Emacs.
+This package provides the [Blackjack(https://en.wikipedia.org/wiki/Blackjack)] card game for the [Emacs](https://www.gnu.org/software/emacs/) text editor.
 
 ### Install
 
-#### If you use `use-package`:
+#### If you use `[use-package](https://github.com/jwiegley/use-package)`:
 
 Assuming you have [MELPA configured](https://melpa.org/#/getting-started), you can add a new entry to your .emacs or init.el:
 
     (use-package blackjack
       :ensure t)
 
-#### For a manual install:
+#### Or for a manual install:
 
 Download and load `blackjack.el` in your .emacs or init.el:
 
@@ -21,13 +21,13 @@ Download and load `blackjack.el` in your .emacs or init.el:
 
 #### Running blackjack:
 
-You can run it like this:
+Once installed you can run the game like this:
 
-    M-x blackjack
+    [M-x](https://www.gnu.org/software/emacs/manual/html_node/emacs/M_002dx.html) blackjack
 
 #### Running tests:
 
-`make test` and `make test-coverage` are available.  Tests are written using [Buttercup](https://github.com/jorgenschaefer/emacs-buttercup).  Test coverage is generated using [undercover](https://github.com/undercover-el/undercover.el).  Both packages are available from MELPA.
+Comands `make test` and `make test-coverage` are convenience commands available.  Tests are written using [Buttercup](https://github.com/jorgenschaefer/emacs-buttercup).  Test coverage is generated using [undercover](https://github.com/undercover-el/undercover.el).  Both packages are available from MELPA.
 
 You will need to install [Ruby](https://www.ruby-lang.org/) and [Simplecov](https://github.com/simplecov-ruby/simplecov) for test coverage to build.
 
