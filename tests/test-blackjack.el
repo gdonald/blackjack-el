@@ -1180,6 +1180,72 @@
               (expect (slot-value game 'money) :to-be 20000)
               (expect (slot-value game 'current-bet) :to-be 1000)))
 
+(describe "blackjack--quit"
+          :var ((game (blackjack-game)))
+
+          (it "calls quit-window"
+              (spy-on 'quit-window)
+              (blackjack--quit game)
+              (expect 'quit-window :to-have-been-called)
+              (expect (slot-value game 'quitting) :to-be t)))
+
+(describe "blackjack--header"
+          :var ((game (blackjack-game)))
+
+          (it "returns formatted game menu"
+              (expect (blackjack--header game) :to-equal
+                      "  Blackjack $100.00  (d) deal new hand  (b) change bet  (o) options  (q) quit"))
+
+          (it "returns formatted hand menu"
+              (setf (slot-value player-hand 'cards) (list card-T card-4))
+              (setf (slot-value game 'player-hands) (list player-hand))
+              (setf (slot-value game 'current-menu) 'hand)
+              (expect (blackjack--header game) :to-equal
+                      "  Blackjack $100.00  (h) hit  (s) stand  (d) double"))
+
+          (it "returns formatted options menu"
+              (setf (slot-value game 'current-menu) 'options)
+              (expect (blackjack--header game) :to-equal
+                      "  Blackjack $100.00  (n) number of decks  (t) deck type  (f) face type  (b) go back"))
+
+          (it "returns formatted deck type menu"
+              (setf (slot-value game 'current-menu) 'deck-type)
+              (expect (blackjack--header game) :to-equal
+                      "  Blackjack $100.00  (1) regular  (2) aces  (3) jacks  (4) aces & jacks  (5) sevens  (6) eights"))
+
+          (it "returns formatted face type menu"
+              (setf (slot-value game 'current-menu) 'face-type)
+              (expect (blackjack--header game) :to-equal
+                      "  Blackjack $100.00  (r) A♠ regular  (a) 🂡 alternate"))
+
+          (it "returns formatted number of decks menu"
+              (setf (slot-value game 'current-menu) 'num-decks)
+              (expect (blackjack--header game) :to-equal
+                      "  Blackjack $100.00  Number of decks (1-8)"))
+
+          (it "returns formatted bet menu"
+              (setf (slot-value game 'current-menu) 'bet)
+              (expect (blackjack--header game) :to-equal
+                      "  Blackjack $100.00  New bet"))
+
+          (it "returns formatted insurance menu"
+              (setf (slot-value game 'current-menu) 'insurance)
+              (expect (blackjack--header game) :to-equal
+                      "  Blackjack $100.00  (y) insure hand  (n) refuse insurance")))
+
+(describe "blackjack--update-header"
+          :var ((game (blackjack-game)))
+
+          (it "sets the header"
+              (blackjack--update-header game)
+              (expect header-line-format :to-equal
+                      "  Blackjack $100.00  (d) deal new hand  (b) change bet  (o) options  (q) quit")))
+
+(describe "blackjack--game-header-menu"
+          (it "returns game menu as a string"
+              (expect (blackjack--game-header-menu) :to-equal
+                      "(d) deal new hand  (b) change bet  (o) options  (q) quit")))
+
 (provide 'test-blackjack)
 
 ;;; test-blackjack.el ends here
