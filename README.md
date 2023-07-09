@@ -2,7 +2,7 @@
 
 ## Blackjack for Emacs
 
-This package provides the [Blackjack(https://en.wikipedia.org/wiki/Blackjack)] card game for the [Emacs](https://www.gnu.org/software/emacs/) text editor.
+This package provides the [Blackjack](https://en.wikipedia.org/wiki/Blackjack) card game for the [Emacs](https://www.gnu.org/software/emacs/) text editor.
 
 ### Install
 
