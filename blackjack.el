@@ -891,7 +891,7 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
     ("quit" (blackjack--quit game))))
 
 (defun blackjack-game-actions-menu ()
-  "Bet actions menu for GAME."
+  "Actions menu for GAME."
   (let ((read-answer-short t))
     (read-answer "Game Actions: "
                  `(("deal" ,blackjack-deal-double-key "deal new hand")
@@ -946,7 +946,7 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
   (with-slots (current-menu deck-type) game
     (setf current-menu 'deck-type)
     (blackjack--update-header game)
-    (setf deck-type (intern (blackjack-deck-type-menu)))
+    (setf deck-type (intern (blackjack--deck-type-menu)))
     (blackjack--normalize-num-decks game)
     (blackjack--shuffle-save-deal-new-hand game)))
 
@@ -959,7 +959,7 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
     (cl-callf max num-decks 1)
     (cl-callf min num-decks 8)))
 
-(defun blackjack-deck-type-menu ()
+(defun blackjack--deck-type-menu ()
   "New GAME deck type menu."
   (let ((read-answer-short t))
     (read-answer

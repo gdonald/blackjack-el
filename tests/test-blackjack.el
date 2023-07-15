@@ -1246,6 +1246,138 @@
               (expect (blackjack--game-header-menu) :to-equal
                       "(d) deal new hand  (b) change bet  (o) options  (q) quit")))
 
+(describe "blackjack--ask-game-action"
+          :var ((game (blackjack-game)))
+
+          (before-each
+           (spy-on 'blackjack--update-header :and-call-through))
+
+          (after-each
+           (expect (slot-value game 'current-menu) :to-be 'game)
+           (expect 'blackjack--update-header :to-have-been-called))
+
+          (it "does nothing, defaults to dealing a new hand"
+              (spy-on 'blackjack-game-actions-menu :and-return-value "deal")
+              (blackjack--ask-game-action game))
+
+          (it "asks about a new bet"
+              (spy-on 'blackjack--ask-new-bet)
+              (spy-on 'blackjack-game-actions-menu :and-return-value "bet")
+              (blackjack--ask-game-action game)
+              (expect 'blackjack--ask-new-bet :to-have-been-called))
+
+          (it "asks about updating game options"
+              (spy-on 'blackjack--ask-game-options)
+              (spy-on 'blackjack-game-actions-menu :and-return-value "options")
+              (blackjack--ask-game-action game)
+              (expect 'blackjack--ask-game-options :to-have-been-called))
+
+          (it "prepares to quit game"
+              (spy-on 'blackjack--quit)
+              (spy-on 'blackjack-game-actions-menu :and-return-value "quit")
+              (blackjack--ask-game-action game)
+              (expect 'blackjack--quit :to-have-been-called)))
+
+(describe "blackjack-game-actions-menu"
+          (it "asks for a game action"
+              (spy-on 'read-answer)
+              (blackjack-game-actions-menu)
+              (expect 'read-answer :to-have-been-called)))
+
+(describe "blackjack--options-header-menu"
+          (it "returns options menu string"
+              (expect (blackjack--options-header-menu)
+                      :to-equal "(n) number of decks  (t) deck type  (f) face type  (b) go back")))
+
+(describe "blackjack--ask-game-options"
+          :var ((game (blackjack-game)))
+
+          (before-each
+           (spy-on 'blackjack--update-header :and-call-through))
+
+          (after-each
+           (expect (slot-value game 'current-menu) :to-be 'options)
+           (expect 'blackjack--update-header :to-have-been-called))
+
+          (it "asks about a new number of decks"
+              (spy-on 'blackjack--ask-new-number-decks)
+              (spy-on 'blackjack--game-options-menu :and-return-value "number-decks")
+              (blackjack--ask-game-options game)
+              (expect 'blackjack--ask-new-number-decks :to-have-been-called))
+
+          (it "asks about a new deck type"
+              (spy-on 'blackjack--ask-new-deck-type)
+              (spy-on 'blackjack--game-options-menu :and-return-value "deck-type")
+              (blackjack--ask-game-options game)
+              (expect 'blackjack--ask-new-deck-type :to-have-been-called))
+
+          (it "asks about a new face type"
+              (spy-on 'blackjack--ask-new-face-type)
+              (spy-on 'blackjack--game-options-menu :and-return-value "face-type")
+              (blackjack--ask-game-options game)
+              (expect 'blackjack--ask-new-face-type :to-have-been-called))
+
+          (it "returns to previous menu"
+              (spy-on 'blackjack--ask-game-action)
+              (spy-on 'blackjack--game-options-menu :and-return-value "back")
+              (blackjack--ask-game-options game)
+              (expect 'blackjack--ask-game-action :to-have-been-called)))
+
+(describe "blackjack--game-options-menu"
+          (it "asks for a new game option choice"
+              (spy-on 'read-answer)
+              (blackjack--game-options-menu)
+              (expect 'read-answer :to-have-been-called)))
+
+(describe "blackjack--deck-type-header-menu"
+          (it "returns deck type menu as a string"
+              (expect (blackjack--deck-type-header-menu) :to-equal
+                      "(1) regular  (2) aces  (3) jacks  (4) aces & jacks  (5) sevens  (6) eights")))
+
+(describe "blackjack--ask-new-deck-type"
+          :var ((game (blackjack-game)))
+
+          (before-each
+           (spy-on 'blackjack--update-header :and-call-through)
+           (spy-on 'blackjack--shuffle-save-deal-new-hand)
+           (spy-on 'blackjack--normalize-num-decks))
+
+          (after-each
+           (expect (slot-value game 'current-menu) :to-be 'deck-type)
+           (expect 'blackjack--update-header :to-have-been-called)
+           (expect 'blackjack--normalize-num-decks :to-have-been-called)
+           (expect 'blackjack--shuffle-save-deal-new-hand :to-have-been-called))
+
+          (it "can be set to 'regular"
+              (spy-on 'blackjack--deck-type-menu :and-return-value "regular")
+              (blackjack--ask-new-deck-type game)
+              (expect (slot-value game 'deck-type) :to-equal 'regular))
+
+          (it "can be set to 'aces"
+              (spy-on 'blackjack--deck-type-menu :and-return-value "aces")
+              (blackjack--ask-new-deck-type game)
+              (expect (slot-value game 'deck-type) :to-equal 'aces))
+
+          (it "can be set to 'jacks"
+              (spy-on 'blackjack--deck-type-menu :and-return-value "jacks")
+              (blackjack--ask-new-deck-type game)
+              (expect (slot-value game 'deck-type) :to-equal 'jacks))
+
+          (it "can be set to 'aces-jacks"
+              (spy-on 'blackjack--deck-type-menu :and-return-value "aces-jacks")
+              (blackjack--ask-new-deck-type game)
+              (expect (slot-value game 'deck-type) :to-equal 'aces-jacks))
+
+          (it "can be set to 'sevens"
+              (spy-on 'blackjack--deck-type-menu :and-return-value "sevens")
+              (blackjack--ask-new-deck-type game)
+              (expect (slot-value game 'deck-type) :to-equal 'sevens))
+
+          (it "can be set to 'eights"
+              (spy-on 'blackjack--deck-type-menu :and-return-value "eights")
+              (blackjack--ask-new-deck-type game)
+              (expect (slot-value game 'deck-type) :to-equal 'eights)))
+
 (provide 'test-blackjack)
 
 ;;; test-blackjack.el ends here
