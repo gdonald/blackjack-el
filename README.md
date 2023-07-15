@@ -15,7 +15,7 @@ Assuming you have [MELPA configured](https://melpa.org/#/getting-started), you c
 
 #### Or for a manual install:
 
-Download and load `blackjack.el` in your .emacs or init.el:
+Download and load [blackjack.el](https://raw.githubusercontent.com/gdonald/blackjack-el/main/blackjack.el) in your .emacs or init.el:
 
     (load "~/path/to/blackjack.el")
 
