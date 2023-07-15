@@ -6,7 +6,7 @@ This package provides the [Blackjack](https://en.wikipedia.org/wiki/Blackjack) c
 
 ### Install
 
-#### If you use `[use-package](https://github.com/jwiegley/use-package)`:
+#### If you use [use-package](https://github.com/jwiegley/use-package):
 
 Assuming you have [MELPA configured](https://melpa.org/#/getting-started), you can add a new entry to your .emacs or init.el:
 
