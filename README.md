@@ -23,7 +23,7 @@ Download and load [blackjack.el](https://raw.githubusercontent.com/gdonald/black
 
 Once installed you can run the game like this:
 
-    [M-x](https://www.gnu.org/software/emacs/manual/html_node/emacs/M_002dx.html) blackjack
+    M-x blackjack
 
 #### Running tests:
 
