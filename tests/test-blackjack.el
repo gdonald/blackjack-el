@@ -1378,6 +1378,40 @@
               (blackjack--ask-new-deck-type game)
               (expect (slot-value game 'deck-type) :to-equal 'eights)))
 
+(describe "blackjack--normalize-num-decks"
+          :var ((game (blackjack-game)))
+
+          (it "sets num-decks to max"
+              (setf (slot-value game 'num-decks) 9)
+              (blackjack--normalize-num-decks game)
+              (expect (slot-value game 'num-decks) :to-be 8))
+
+          (it "sets num-decks to min"
+              (setf (slot-value game 'num-decks) 0)
+              (blackjack--normalize-num-decks game)
+              (expect (slot-value game 'num-decks) :to-be 1))
+
+          (it "with a deck of aces sets num-decks to 2"
+              (setf (slot-value game 'num-decks) 0)
+              (setf (slot-value game 'deck-type) 'aces)
+              (blackjack--normalize-num-decks game)
+              (expect (slot-value game 'num-decks) :to-be 2)))
+
+(describe "blackjack--deck-type-menu"
+          (it "asks for a new deck-type choice"
+              (spy-on 'read-answer)
+              (blackjack--deck-type-menu)
+              (expect 'read-answer :to-have-been-called)))
+
+(describe "blackjack--face-type-header-menu"
+          (it "returns formatted face-type header menu"
+              (expect (blackjack--face-type-header-menu) :to-equal
+                      "(r) A♠ regular  (a) 🂡 alternate")))
+
+(describe "blackjack--ask-new-face-type"
+
+          )
+
 (provide 'test-blackjack)
 
 ;;; test-blackjack.el ends here
