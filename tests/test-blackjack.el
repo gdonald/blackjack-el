@@ -1409,6 +1409,33 @@
                       "(r) A♠ regular  (a) 🂡 alternate")))
 
 (describe "blackjack--ask-new-face-type"
+          :var ((game (blackjack-game)))
+
+          (before-each
+           (spy-on 'blackjack--update-header :and-call-through)
+           (spy-on 'blackjack--persist-state-deal-new-hand))
+
+          (after-each
+           (expect (slot-value game 'current-menu) :to-be 'face-type)
+           (expect 'blackjack--update-header :to-have-been-called))
+
+          (it "sets face-type to 'regular"
+              (spy-on 'blackjack--face-type-menu :and-return-value "regular")
+              (blackjack--ask-new-face-type game)
+              (expect (slot-value game 'face-type) :to-be 'regular))
+
+          (it "sets face-type to 'alternate"
+              (spy-on 'blackjack--face-type-menu :and-return-value "alternate")
+              (blackjack--ask-new-face-type game)
+              (expect (slot-value game 'face-type) :to-be 'alternate)))
+
+(describe "blackjack--face-type-menu"
+          (it "asks for a new face-type choice"
+              (spy-on 'read-answer)
+              (blackjack--face-type-menu)
+              (expect 'read-answer :to-have-been-called)))
+
+(describe "blackjack--insurance-header-menu"
 
           )
 
