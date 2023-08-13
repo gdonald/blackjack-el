@@ -1436,8 +1436,46 @@
               (expect 'read-answer :to-have-been-called)))
 
 (describe "blackjack--insurance-header-menu"
+          (it "returns insurance header menu as a string"
+              (expect (blackjack--insurance-header-menu) :to-equal
+                      "(y) insure hand  (n) refuse insurance")))
 
-          )
+(describe "blackjack--ask-insurance-action"
+          :var ((game (blackjack-game)))
+
+          (it "hand is insured"
+              (spy-on 'blackjack--insure-hand)
+              (spy-on 'blackjack--ask-insurance-menu :and-return-value "yes")
+              (blackjack--ask-insurance-action game)
+              (expect 'blackjack--insure-hand :to-have-been-called))
+
+          (it "insurance is refused"
+              (spy-on 'blackjack--no-insurance)
+              (spy-on 'blackjack--ask-insurance-menu :and-return-value "no")
+              (blackjack--ask-insurance-action game)
+              (expect 'blackjack--no-insurance :to-have-been-called)))
+
+(describe "blackjack--ask-insurance-menu"
+          (it "asks for an insurance choice"
+              (spy-on 'read-answer)
+              (blackjack--ask-insurance-menu)
+              (expect 'read-answer :to-have-been-called)))
+
+(describe "blackjack--num-decks-header-menu"
+          (it "returns num-decks header menu as a string"
+              (expect (blackjack--num-decks-header-menu) :to-equal
+                      "Number of decks (1-8)")))
+
+(describe "blackjack--bet-menu"
+          (it "returns new bet prompt as a string"
+              (expect (blackjack--bet-menu) :to-equal
+                      "New bet")))
+
+(describe "blackjack--new-number-decks-prompt"
+          (it "asks for a new number of decks"
+              (spy-on 'read-string)
+              (blackjack--new-number-decks-prompt)
+              (expect 'read-string :to-have-been-called)))
 
 (provide 'test-blackjack)
 
