@@ -1477,6 +1477,62 @@
               (blackjack--new-number-decks-prompt)
               (expect 'read-string :to-have-been-called)))
 
+(describe "blackjack--hand-menu"
+          :var ((game (blackjack-game)))
+
+          (it "returns no options for player hand menu as a string"
+              (expect (blackjack--hand-menu game) :to-equal ""))
+
+          (it "returns double option for player hand menu as a string"
+              (spy-on 'blackjack--hand-can-double-p :and-return-value t)
+              (expect (blackjack--hand-menu game) :to-equal "(d) double"))
+
+          (it "returns split option for player hand menu as a string"
+              (spy-on 'blackjack--hand-can-split-p :and-return-value t)
+              (expect (blackjack--hand-menu game) :to-equal "(p) split"))
+
+          (it "returns stand option for player hand menu as a string"
+              (spy-on 'blackjack--hand-can-stand-p :and-return-value t)
+              (expect (blackjack--hand-menu game) :to-equal "(s) stand"))
+
+          (it "returns hit option for player hand menu as a string"
+              (spy-on 'blackjack--hand-can-hit-p :and-return-value t)
+              (expect (blackjack--hand-menu game) :to-equal "(h) hit"))
+
+          (it "returns all options for player hand menu as a string"
+              (spy-on 'blackjack--hand-can-double-p :and-return-value t)
+              (spy-on 'blackjack--hand-can-split-p :and-return-value t)
+              (spy-on 'blackjack--hand-can-stand-p :and-return-value t)
+              (spy-on 'blackjack--hand-can-hit-p :and-return-value t)
+              (expect (blackjack--hand-menu game) :to-equal "(h) hit  (s) stand  (p) split  (d) double")))
+
+(describe "blackjack--ask-hand-action"
+          :var ((game (blackjack-game)))
+
+          (it "stands the hand"
+              (spy-on 'blackjack--hand-actions-menu :and-return-value "stand")
+              (spy-on 'blackjack--stand)
+              (blackjack--ask-hand-action game)
+              (expect 'blackjack--stand :to-have-been-called))
+
+          (it "hits the hand"
+              (spy-on 'blackjack--hand-actions-menu :and-return-value "hit")
+              (spy-on 'blackjack--hit)
+              (blackjack--ask-hand-action game)
+              (expect 'blackjack--hit :to-have-been-called))
+
+          (it "splits the hand"
+              (spy-on 'blackjack--hand-actions-menu :and-return-value "split")
+              (spy-on 'blackjack--split)
+              (blackjack--ask-hand-action game)
+              (expect 'blackjack--split :to-have-been-called))
+
+          (it "doubles the hand"
+              (spy-on 'blackjack--hand-actions-menu :and-return-value "double")
+              (spy-on 'blackjack--double)
+              (blackjack--ask-hand-action game)
+              (expect 'blackjack--double :to-have-been-called)))
+
 (provide 'test-blackjack)
 
 ;;; test-blackjack.el ends here

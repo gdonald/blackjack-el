@@ -1045,18 +1045,10 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
   "Ask hand action for GAME."
   (let ((answer (blackjack--hand-actions-menu game)))
     (pcase answer
-      ("stand" (if (blackjack--hand-can-stand-p game)
-		   (blackjack--stand game)
-		 (blackjack--ask-hand-action game)))
-      ("hit" (if (blackjack--hand-can-hit-p game)
-		 (blackjack--hit game)
-	       (blackjack--ask-hand-action game)))
-      ("split" (if (blackjack--hand-can-split-p game)
-		   (blackjack--split game)
-		 (blackjack--ask-hand-action game)))
-      ("double" (if (blackjack--hand-can-double-p game)
-		    (blackjack--double game)
-		  (blackjack--ask-hand-action game))))))
+      ("stand" (blackjack--stand game))
+      ("hit" (blackjack--hit game))
+      ("split" (blackjack--split game))
+      ("double" (blackjack--double game)))))
 
 (defun blackjack--hand-actions-menu (game)
   "Hand actions menu for GAME."
