@@ -1533,6 +1533,121 @@
               (blackjack--ask-hand-action game)
               (expect 'blackjack--double :to-have-been-called)))
 
+(describe "blackjack--hand-actions-menu"
+          :var ((game (blackjack-game)))
+
+          (it "asks for a new hand action choice"
+              (spy-on 'read-answer)
+              (spy-on 'blackjack--hand-can-double-p :and-return-value t)
+              (spy-on 'blackjack--hand-can-split-p :and-return-value t)
+              (spy-on 'blackjack--hand-can-stand-p :and-return-value t)
+              (spy-on 'blackjack--hand-can-hit-p :and-return-value t)
+              (blackjack--hand-actions-menu game)
+              (expect 'read-answer :to-have-been-called)))
+
+(describe "blackjack--show-options-menu"
+          :var ((game (blackjack-game)))
+
+          (it "switches to options menu"
+              (spy-on 'blackjack--ask-game-options)
+              (spy-on 'blackjack--update-header)
+              (spy-on 'blackjack--valid-menu-action-p :and-return-value t)
+              (blackjack--show-options-menu game)
+              (expect (slot-value game 'current-menu) :to-equal 'options)
+              (expect 'blackjack--ask-game-options :to-have-been-called)
+              (expect 'blackjack--update-header :to-have-been-called)))
+
+(describe "blackjack--ask-new-number-decks"
+          :var ((game (blackjack-game)))
+
+          (it "asks for new number of decks"
+              (spy-on 'blackjack--update-header)
+              (spy-on 'blackjack--normalize-num-decks)
+              (spy-on 'blackjack--persist-state)
+              (spy-on 'blackjack--shuffle)
+              (spy-on 'blackjack--deal-new-hand)
+              (spy-on 'blackjack--new-number-decks-prompt :and-return-value "2")
+              (blackjack--ask-new-number-decks game)
+              (expect 'blackjack--update-header :to-have-been-called)
+              (expect 'blackjack--normalize-num-decks :to-have-been-called)
+              (expect 'blackjack--persist-state :to-have-been-called)
+              (expect 'blackjack--shuffle :to-have-been-called)
+              (expect 'blackjack--deal-new-hand :to-have-been-called)
+              (expect (slot-value game 'current-menu) :to-equal 'game)
+              (expect (slot-value game 'num-decks) :to-equal 2)))
+
+(describe "blackjack--show-game-menu"
+          :var ((game (blackjack-game)))
+
+          (it "shows game menu"
+              (spy-on 'blackjack--update-header)
+              (blackjack--show-game-menu game)
+              (expect (slot-value game 'current-menu) :to-equal 'game)
+              (expect 'blackjack--update-header :to-have-been-called)))
+
+(describe "blackjack--show-deck-type-menu"
+          :var ((game (blackjack-game)))
+
+          (it "shows deck-type menu"
+              (spy-on 'blackjack--update-header)
+              (spy-on 'blackjack--ask-deck-type-action)
+              (spy-on 'blackjack--valid-menu-action-p :and-return-value t)
+              (blackjack--show-deck-type-menu game)
+              (expect 'blackjack--update-header :to-have-been-called)))
+
+(describe "blackjack--show-face-type-menu"
+          :var ((game (blackjack-game)))
+
+          (it "shows face-type menu"
+              (spy-on 'blackjack--update-header)
+              (spy-on 'blackjack--ask-face-type-action)
+              (spy-on 'blackjack--valid-menu-action-p :and-return-value t)
+              (blackjack--show-face-type-menu game)
+              (expect 'blackjack--update-header :to-have-been-called)))
+
+(describe "blackjack--persist-state-deal-new-hand"
+          :var ((game (blackjack-game)))
+
+          (it "persists state and deals a new hand"
+              (spy-on 'blackjack--persist-state)
+              (spy-on 'blackjack--deal-new-hand)
+              (blackjack--persist-state-deal-new-hand game)
+              (expect 'blackjack--persist-state :to-have-been-called)
+              (expect 'blackjack--deal-new-hand :to-have-been-called)))
+
+(describe "blackjack--shuffle-save-deal-new-hand"
+          :var ((game (blackjack-game)))
+
+          (it "shuffles and persists state and deals a new hand"
+              (spy-on 'blackjack--shuffle)
+              (spy-on 'blackjack--persist-state-deal-new-hand)
+              (blackjack--shuffle-save-deal-new-hand game)
+              (expect 'blackjack--shuffle :to-have-been-called)
+              (expect 'blackjack--persist-state-deal-new-hand :to-have-been-called)))
+
+(describe "blackjack--init"
+          :var ((game (blackjack-game)))
+
+          (it "initialized game state (and fake quit)"
+              (spy-on blackjack-game :and-return-value game)
+              (spy-on 'blackjack--load-persisted-state)
+              (spy-on 'blackjack--normalize-num-decks)
+              (spy-on 'blackjack--deal-new-hand :and-call-fake
+                      (lambda (val)
+                        (setf (slot-value game 'quitting) t)))
+              (blackjack--init)
+              (expect 'blackjack--load-persisted-state :to-have-been-called)
+              (expect 'blackjack--normalize-num-decks :to-have-been-called)
+              (expect (slot-value game 'quitting) :to-be t)))
+
+(describe "blackjack"
+          (it "runs blackjack"
+              (spy-on 'blackjack--init)
+              (spy-on 'blackjack-mode)
+              (blackjack)
+              (expect 'blackjack--init :to-have-been-called)
+              (expect 'blackjack-mode :to-have-been-called)))
+
 (provide 'test-blackjack)
 
 ;;; test-blackjack.el ends here

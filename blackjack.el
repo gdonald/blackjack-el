@@ -1072,12 +1072,6 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
     (blackjack--update-header game)
     (blackjack--ask-game-options game)))
 
-(defun blackjack--show-num-decks-menu (game)
-  "Switch to GAME number of decks menu."
-  (setf (slot-value game 'current-menu) 'num-decks)
-  (blackjack--update-header game)
-  (blackjack--ask-new-number-decks game))
-
 (defun blackjack--ask-new-number-decks (game)
   "Get new number of GAME decks."
   (with-slots (current-menu num-decks) game
