@@ -57,6 +57,7 @@ Code for Blackjack in other programming languages:
 
 - [Ruby](https://github.com/gdonald/console-blackjack-ruby)
 - [Rust](https://github.com/gdonald/console-blackjack-rust)
+- [Zig](https://github.com/gdonald/blackjack-zig)
 - [Ruku](https://github.com/gdonald/Console-Blackjack)
 - [Typescript](https://github.com/gdonald/blackjack-js)
 - [Perl](https://github.com/gdonald/console-blackjack-perl)
