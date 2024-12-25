@@ -68,3 +68,5 @@ Code for Blackjack in other programming languages:
 - [Elixir](https://github.com/gdonald/blackjack-ex)
 - [Python](https://github.com/gdonald/blackjack-py)
 - [C with SDL](https://github.com/gdonald/blackjack-c-sdl)
+- [Smalltalk](https://github.com/gdonald/blackjack-st)
+
