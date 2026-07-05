@@ -859,7 +859,7 @@ Can be a single-character currency symbol such as \"$\", \"€\" or \"£\", or a
   (interactive)
   (when (blackjack--valid-menu-action-p game 'game)
     (setf (slot-value game 'quitting) t)
-    (quit-window)))
+    (quit-window t)))
 
 (defun blackjack--header (game)
   "Return GAME header."

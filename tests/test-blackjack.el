@@ -1221,7 +1221,12 @@
               (spy-on 'quit-window)
               (blackjack--quit game)
               (expect 'quit-window :to-have-been-called)
-              (expect (slot-value game 'quitting) :to-be t)))
+              (expect (slot-value game 'quitting) :to-be t))
+
+          (it "kills the buffer"
+              (spy-on 'quit-window)
+              (blackjack--quit game)
+              (expect 'quit-window :to-have-been-called-with t)))
 
 (describe "blackjack--header"
           :var ((game (blackjack-game)))
